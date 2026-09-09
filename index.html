@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#f1f5f9;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--nav:#0f172a;--accent:#0f766e;--accent2:#115e59;--warn:#b45309;--danger:#b91c1c;--ok:#166534}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
-button,input,select{font:inherit}.shell{display:flex;min-height:100vh}.side{width:238px;background:var(--nav);color:#fff;padding:24px 18px;position:fixed;inset:0 auto 0 0}.brand{font-weight:900;font-size:21px;line-height:1.2;margin-bottom:24px}.brand small{display:block;color:#94a3b8;font-size:12px;margin-top:5px}.side nav{display:grid;gap:6px}.nav{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:11px 13px;border-radius:10px;cursor:pointer}.nav.active,.nav:hover{background:#1e293b;color:#fff}
+button,input,select{font:inherit}.auth-gate{position:fixed;inset:0;z-index:999;background:rgba(15,23,42,.94);display:flex;align-items:center;justify-content:center;padding:20px}.auth-gate.hidden{display:none}.auth-box{width:min(440px,100%);background:#fff;border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.3)}.auth-box h2{margin:0 0 8px}.auth-box input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:12px 0}.auth-status{font-size:12px;color:var(--muted);min-height:20px}.sessionbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.shell{display:flex;min-height:100vh}.side{width:238px;background:var(--nav);color:#fff;padding:24px 18px;position:fixed;inset:0 auto 0 0}.brand{font-weight:900;font-size:21px;line-height:1.2;margin-bottom:24px}.brand small{display:block;color:#94a3b8;font-size:12px;margin-top:5px}.side nav{display:grid;gap:6px}.nav{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:11px 13px;border-radius:10px;cursor:pointer}.nav.active,.nav:hover{background:#1e293b;color:#fff}
 .main{margin-left:238px;width:calc(100% - 238px);padding:26px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:22px}.top h1{margin:0;font-size:28px}.muted{color:var(--muted);font-size:13px}.pill{background:#ccfbf1;color:#115e59;padding:8px 12px;border-radius:999px;font-weight:800;font-size:12px}
 .view{display:none}.view.active{display:block}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(15,23,42,.04)}.kpi-label{font-size:12px;color:var(--muted)}.kpi{font-size:30px;font-weight:900;margin-top:5px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.notice{padding:12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px}.oknotice{padding:12px;border-radius:10px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;font-size:13px}
 .toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.btn{border:0;border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent2)}.secondary{background:#e2e8f0;color:#0f172a}.danger{background:#fee2e2;color:#991b1b}
@@ -18,6 +18,16 @@ button,input,select{font:inherit}.shell{display:flex;min-height:100vh}.side{widt
 </style>
 </head>
 <body>
+<div id="authGate" class="auth-gate">
+  <div class="auth-box">
+    <div class="brand" style="color:#0f172a;margin-bottom:12px">동행솔루션<small style="color:#64748b">TAX & ACCOUNTING AX · CLOUD ALPHA</small></div>
+    <h2>이메일로 로그인</h2>
+    <p class="muted">비밀번호 없이 이메일로 전송되는 로그인 링크를 사용합니다.</p>
+    <input id="loginEmail" type="email" autocomplete="email" placeholder="name@example.com">
+    <button class="btn primary" id="sendMagicLink" style="width:100%">로그인 링크 보내기</button>
+    <div id="authStatus" class="auth-status"></div>
+  </div>
+</div>
 <div class="shell">
 <aside class="side">
  <div class="brand">동행솔루션<small>TAX & ACCOUNTING AX · PUBLIC ALPHA</small></div>
@@ -31,10 +41,10 @@ button,input,select{font:inherit}.shell{display:flex;min-height:100vh}.side{widt
  </nav>
 </aside>
 <main class="main">
-<header class="top"><div><h1 id="title">대시보드</h1><div class="muted">수집 → AX 추천 → 검토/보완 → 담당자 승인 → 신고 준비</div></div><div class="pill" id="companyPill">양촌방문요양센터 · 비영리</div></header>
+<header class="top"><div><h1 id="title">대시보드</h1><div class="muted">수집 → AX 추천 → 검토/보완 → 담당자 승인 → 신고 준비</div></div><div class="sessionbar"><div class="pill" id="cloudStatus">연결 확인 중</div><div class="pill" id="companyPill">사업장 미선택</div><button class="btn secondary" id="signOutBtn">로그아웃</button></div></header>
 
 <section id="dashboard" class="view active">
- <div class="hero"><h2>장기요양기관 회계업무를 승인 중심 AX로</h2><p>거래 분류와 신고자료는 AI·규칙이 초안을 만들고, 최종 확정은 담당자가 수행합니다. 현재 공개 알파는 브라우저 로컬 저장 방식이며 실제 신고·희망이음 전송은 하지 않습니다.</p></div>
+ <div class="hero"><h2>장기요양기관 회계업무를 승인 중심 AX로</h2><p>거래 분류와 신고자료는 AI·규칙이 초안을 만들고, 최종 확정은 담당자가 수행합니다. 로그인 후 사업장과 거래내역은 Supabase DB에 저장됩니다. 실제 신고·희망이음 전송은 아직 하지 않습니다.</p></div>
  <div class="cards">
   <div class="card"><div class="kpi-label">대상 거래</div><div class="kpi" id="kAll">0</div></div>
   <div class="card"><div class="kpi-label">검토필요</div><div class="kpi" id="kReview">0</div></div>
@@ -73,9 +83,14 @@ button,input,select{font:inherit}.shell{display:flex;min-height:100vh}.side{widt
 </section>
 
 <section id="audit" class="view"><div class="card"><div class="toolbar"><h3>감사로그</h3><button class="btn secondary" id="exportLog">JSON 내보내기</button></div><div class="tablewrap"><table class="table"><thead><tr><th>시간</th><th>작업</th><th>대상</th><th>내용</th></tr></thead><tbody id="auditBody"></tbody></table></div></div></section>
-<div class="footer">동행솔루션 세무 AX Public Alpha · 브라우저 로컬 저장 · 실제 세무신고/기관전송 기능 없음</div>
+<div class="footer">동행솔루션 세무 AX Cloud Alpha · Supabase Auth/DB · 실제 세무신고/기관전송 기능 없음</div>
 </main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script>
+const SUPABASE_URL='https://xvisvipdbdemfgutzouh.supabase.co';
+const SUPABASE_KEY='sb_publishable_p14zNLzPxqnO0YlqbVgzwQ_ZHlf91HW';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
+let session=null, orgId=null, cloudCompanyId=null, cloudRole=null;
 const rules=[
  {k:['급여','월급'],d:'out',c:'01/11/111',n:'급여',p:.95},
  {k:['4대보험','사회보험','국민연금','건강보험','고용보험'],d:'out',c:'01/11/116',n:'사회보험부담금',p:.92},
@@ -97,17 +112,19 @@ const demo=[
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const money=n=>Number(n||0).toLocaleString('ko-KR');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let company=JSON.parse(localStorage.getItem('dha_company')||'null')||{name:'양촌방문요양센터',account:'비영리',type:'장기요양기관'};
-let tx=JSON.parse(localStorage.getItem('dha_tx')||'null')||demo.map(classify);
-let audit=JSON.parse(localStorage.getItem('dha_audit')||'[]');
-let filing=JSON.parse(localStorage.getItem('dha_filing')||'null')||{withholding:'미생성',insurance:'미생성'};
+let company={name:'미지정 사업장',account:'비영리',type:'장기요양기관'};
+let tx=[];
+let audit=[];
+let filing={withholding:'미생성',insurance:'미생성'};
 function classify(t){
  const dir=Number(t.inc)>0?'in':'out', text=String(t.desc||'').toLowerCase();
  const r=rules.find(x=>x.d===dir&&x.k.some(k=>text.includes(k.toLowerCase())));
  return {...t,code:r?r.c:'-',name:r?r.n:'미분류',confidence:r?r.p:.35,status:r?(r.p>=.9?'검토필요':'AI초안'):'보완요청'};
 }
-function persist(){localStorage.setItem('dha_company',JSON.stringify(company));localStorage.setItem('dha_tx',JSON.stringify(tx));localStorage.setItem('dha_audit',JSON.stringify(audit));localStorage.setItem('dha_filing',JSON.stringify(filing))}
-function log(action,target,detail){audit.unshift({time:new Date().toLocaleString('ko-KR'),action,target,detail});audit=audit.slice(0,300);persist();renderAudit()}
+function persist(){}
+async function log(action,target,detail){
+ audit.unshift({time:new Date().toLocaleString('ko-KR'),action,target,detail});audit=audit.slice(0,300);renderAudit();
+}
 function badge(s){const c=s==='승인완료'?'approved':s==='보완요청'?'need':s==='AI초안'?'draft':'review';return '<span class="badge '+c+'">'+esc(s)+'</span>'}
 function render(){
  $('#companyPill').textContent=company.name+' · '+company.account;
@@ -118,20 +135,43 @@ function render(){
  $('#reviewList').innerHTML=pending.map(x=>'<div class="review-item"><b>'+esc(x.id)+' · '+esc(x.desc)+'</b><div class="muted">'+money(x.inc||x.out)+'원 · '+esc(x.code)+' '+esc(x.name)+' · '+Math.round(x.confidence*100)+'%</div><div class="actions"><button class="btn primary" onclick="approve(\''+x.id+'\')">승인</button><button class="btn secondary" onclick="editTx(\''+x.id+'\')">분류수정</button><button class="btn danger" onclick="need(\''+x.id+'\')">보완요청</button></div></div>').join('')||'<p class="muted">검토할 거래가 없습니다.</p>';
  renderFiling(); renderAudit(); persist();
 }
-function approve(id){const x=tx.find(v=>v.id===id);if(!x)return;if(x.code==='-')return alert('미분류 거래는 승인할 수 없습니다. 먼저 분류를 수정하세요.');x.status='승인완료';log('거래승인',id,x.code+' '+x.name);render()}
-function editTx(id){const x=tx.find(v=>v.id===id);if(!x)return;const code=prompt('관/항/목 코드',x.code);if(!code)return;const name=prompt('과목명',x.name)||x.name;x.code=code;x.name=name;x.confidence=1;x.status='검토필요';log('분류수정',id,code+' '+name);render()}
-function need(id){const x=tx.find(v=>v.id===id);if(!x)return;x.status='보완요청';log('보완요청',id,x.desc);render()}
+async function approve(id){const x=tx.find(v=>v.id===id);if(!x)return;if(x.code==='-')return alert('미분류 거래는 승인할 수 없습니다. 먼저 분류를 수정하세요.');if(session&&x.dbid){const {error}=await sb.from('transactions').update({status:'승인완료',approved_by:session.user.id,approved_at:new Date().toISOString()}).eq('id',x.dbid);if(error)return alert('승인 저장 실패: '+error.message)}x.status='승인완료';await log('거래승인',id,x.code+' '+x.name);render()}
+async function editTx(id){const x=tx.find(v=>v.id===id);if(!x)return;const code=prompt('관/항/목 코드',x.code);if(!code)return;const name=prompt('과목명',x.name)||x.name;if(session&&x.dbid){const {error}=await sb.from('transactions').update({account_code:code,account_name:name,confidence:1,status:'검토필요'}).eq('id',x.dbid);if(error)return alert('분류 저장 실패: '+error.message)}x.code=code;x.name=name;x.confidence=1;x.status='검토필요';await log('분류수정',id,code+' '+name);render()}
+async function need(id){const x=tx.find(v=>v.id===id);if(!x)return;if(session&&x.dbid){const {error}=await sb.from('transactions').update({status:'보완요청'}).eq('id',x.dbid);if(error)return alert('보완요청 저장 실패: '+error.message)}x.status='보완요청';await log('보완요청',id,x.desc);render()}
 function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];const h=lines[0].split(',').map(v=>v.trim());const find=a=>h.findIndex(v=>a.includes(v.replace(/\s/g,'')));const di=find(['거래일','일자','날짜']),de=find(['적요','내용','거래내용']),ii=find(['입금','수입','입금액']),oi=find(['출금','지출','출금액']);return lines.slice(1).map((line,i)=>{const c=line.split(',').map(v=>v.replace(/^"|"$/g,'').trim());return classify({id:'UP-'+Date.now()+'-'+i,date:c[di]||'',desc:c[de]||'',inc:Number((c[ii]||'0').replace(/[,₩]/g,'')),out:Number((c[oi]||'0').replace(/[,₩]/g,''))})})}
-$('#csv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const rows=parseCsv(r.result);if(!rows.length)return alert('읽을 수 있는 거래가 없습니다.');tx.push(...rows);log('CSV업로드','거래내역',rows.length+'건');render()};r.readAsText(f,'utf-8')};
+$('#csv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const rows=parseCsv(r.result);if(!rows.length)return alert('읽을 수 있는 거래가 없습니다.');if(!session||!cloudCompanyId)return alert('로그인과 사업장 연결이 필요합니다.');const payload=rows.map(x=>({company_id:cloudCompanyId,external_id:x.id,transaction_date:x.date,description:x.desc,amount_in:x.inc,amount_out:x.out,account_code:x.code==='-'?null:x.code,account_name:x.name==='미분류'?null:x.name,confidence:x.confidence,status:x.status}));const {data,error}=await sb.from('transactions').insert(payload).select();if(error)return alert('CSV 저장 실패: '+error.message);tx.push(...data.map(mapDbTx));await log('CSV업로드','거래내역',data.length+'건');render()};r.readAsText(f,'utf-8')};
 $('#sampleCsv').onclick=()=>download('거래일,적요,입금,출금\n2026-09-01,예시거래,0,10000','거래업로드_템플릿.csv','text/csv;charset=utf-8');
-$('#saveCompany').onclick=()=>{company={name:$('#companyName').value.trim()||'미지정 사업장',account:$('#accountType').value,type:$('#companyType').value};log('사업장저장',company.name,company.account+' / '+company.type);render()};
+$('#saveCompany').onclick=async()=>{const next={name:$('#companyName').value.trim()||'미지정 사업장',account:$('#accountType').value,type:$('#companyType').value};if(!session||!orgId)return alert('로그인이 필요합니다.');let error;if(cloudCompanyId){({error}=await sb.from('companies').update({name:next.name,account_type:next.account,company_type:next.type,updated_at:new Date().toISOString()}).eq('id',cloudCompanyId))}else{const res=await sb.from('companies').insert({organization_id:orgId,name:next.name,account_type:next.account,company_type:next.type}).select().single();error=res.error;if(res.data)cloudCompanyId=res.data.id}if(error)return alert('사업장 저장 실패: '+error.message);company=next;await log('사업장저장',company.name,company.account+' / '+company.type);render()};
 function renderFiling(){const approved=tx.filter(x=>x.status==='승인완료');const sumIn=approved.reduce((a,x)=>a+x.inc,0),sumOut=approved.reduce((a,x)=>a+x.out,0);$('#withSummary').innerHTML='<div class="summary-row"><span>승인 거래</span><b>'+approved.length+'건</b></div><div class="summary-row"><span>승인 수입</span><b>'+money(sumIn)+'원</b></div><div class="summary-row"><span>상태</span><b>'+filing.withholding+'</b></div>';$('#insSummary').innerHTML='<div class="summary-row"><span>승인 거래</span><b>'+approved.length+'건</b></div><div class="summary-row"><span>승인 지출</span><b>'+money(sumOut)+'원</b></div><div class="summary-row"><span>상태</span><b>'+filing.insurance+'</b></div>'}
 function makeFiling(k){filing[k]='생성완료';log('신고자료생성',k,'담당자 검토 필요');render()}
 function approveFiling(k){if(filing[k]==='미생성')return alert('먼저 신고자료를 생성하세요.');filing[k]='승인완료';log('신고자료승인',k,'담당자 승인');render()}
 function renderAudit(){$('#auditBody').innerHTML=audit.map(a=>'<tr><td>'+esc(a.time)+'</td><td>'+esc(a.action)+'</td><td>'+esc(a.target)+'</td><td>'+esc(a.detail||'')+'</td></tr>').join('')||'<tr><td colspan="4">기록이 없습니다.</td></tr>'}
 function download(text,name,type){const b=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),100)}
 $('#exportLog').onclick=()=>download(JSON.stringify(audit,null,2),'동행솔루션_감사로그.json','application/json');
-$$('.nav').forEach(b=>b.onclick=()=>{$$('.nav').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active');$('#title').textContent=b.textContent});
+$('.nav').forEach(b=>b.onclick=()=>{$('.nav').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active');$('#title').textContent=b.textContent});
+
+function mapDbTx(x){return {dbid:x.id,id:x.external_id||String(x.id).slice(0,8),date:x.transaction_date,desc:x.description,inc:Number(x.amount_in||0),out:Number(x.amount_out||0),code:x.account_code||'-',name:x.account_name||'미분류',confidence:Number(x.confidence??0.35),status:x.status}}
+async function loadCloudData(){
+ const {data:m,error:me}=await sb.from('organization_members').select('organization_id,role').eq('user_id',session.user.id).limit(1).maybeSingle();
+ if(me)throw me;
+ if(!m){const {data,error}=await sb.functions.invoke('onboard-owner',{body:{organization_name:'동행솔루션'}});if(error)throw error;orgId=data.organization_id;cloudRole=data.role}else{orgId=m.organization_id;cloudRole=m.role}
+ const {data:companies,error:ce}=await sb.from('companies').select('*').eq('organization_id',orgId).eq('is_active',true).order('created_at',{ascending:true}).limit(1);
+ if(ce)throw ce;
+ if(companies&&companies[0]){const c=companies[0];cloudCompanyId=c.id;company={name:c.name,account:c.account_type,type:c.company_type};const {data:rows,error:te}=await sb.from('transactions').select('*').eq('company_id',cloudCompanyId).order('transaction_date',{ascending:false}).limit(1000);if(te)throw te;tx=(rows||[]).map(mapDbTx)}else{cloudCompanyId=null;company={name:'미지정 사업장',account:'비영리',type:'장기요양기관'};tx=[]}
+ $('#cloudStatus').textContent='Cloud · '+cloudRole;
+ render();
+}
+async function initAuth(){
+ const {data:{session:sess}}=await sb.auth.getSession();session=sess;
+ if(!session){$('#authGate').classList.remove('hidden');$('#cloudStatus').textContent='로그인 필요';return}
+ $('#authGate').classList.add('hidden');$('#cloudStatus').textContent='Cloud 연결 중';
+ try{await loadCloudData()}catch(e){console.error(e);$('#cloudStatus').textContent='Cloud 오류';alert('클라우드 연결 오류: '+(e.message||e))}
+}
+$('#sendMagicLink').onclick=async()=>{const email=$('#loginEmail').value.trim();if(!email)return alert('이메일 주소를 입력해 주세요.');$('#authStatus').textContent='로그인 링크를 보내는 중입니다.';const redirectTo=location.origin+location.pathname;const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:redirectTo}});$('#authStatus').textContent=error?'전송 실패: '+error.message:'이메일을 확인해 로그인 링크를 눌러주세요.'};
+$('#signOutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()};
+sb.auth.onAuthStateChange(async(event,newSession)=>{session=newSession;if(event==='SIGNED_IN'&&session){$('#authGate').classList.add('hidden');await loadCloudData()}});
+
 render();
+initAuth();
 </script>
 </body></html>
