@@ -15,8 +15,7 @@ create table if not exists public.employees (
   weekly_hours numeric(6,2),
   employment_type text,
   phone text,
-  status text not null default '재직'
-    check (status in ('입사예정','재직','퇴사예정','퇴사')),
+  status text not null default '재직' check (status in ('입사예정','재직','퇴사예정','퇴사')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -35,8 +34,7 @@ create table if not exists public.insurance_requests (
   loss_reason text,
   payload jsonb not null default '{}'::jsonb,
   validation_errors jsonb not null default '[]'::jsonb,
-  status text not null default '요청접수'
-    check (status in ('요청접수','검증필요','보완요청','검증완료','승인대기','승인완료','제출대기','접수완료','처리완료','반려','취소')),
+  status text not null default '요청접수' check (status in ('요청접수','검증필요','보완요청','검증완료','승인대기','승인완료','제출대기','접수완료','처리완료','반려','취소')),
   requested_by uuid references auth.users(id),
   requested_at timestamptz not null default now(),
   approved_by uuid references auth.users(id),
@@ -88,68 +86,70 @@ alter table public.insurance_requests enable row level security;
 alter table public.insurance_submissions enable row level security;
 alter table public.insurance_delegations enable row level security;
 
-drop policy if exists "org members manage employees" on public.employees;
-create policy "org members manage employees" on public.employees for all
-using (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)))
-with check (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)));
+create policy "employees_select" on public.employees for select
+using (exists (select 1 from public.companies c where c.id = company_id and private.is_org_member(c.organization_id)));
+create policy "employees_insert" on public.employees for insert
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer','staff'])));
+create policy "employees_update" on public.employees for update
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer'])))
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer'])));
+create policy "employees_delete" on public.employees for delete
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])));
 
-drop policy if exists "org members manage insurance requests" on public.insurance_requests;
-create policy "org members manage insurance requests" on public.insurance_requests for all
-using (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)))
-with check (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)));
+create policy "insurance_requests_select" on public.insurance_requests for select
+using (exists (select 1 from public.companies c where c.id = company_id and private.is_org_member(c.organization_id)));
+create policy "insurance_requests_insert" on public.insurance_requests for insert
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer','staff'])));
+create policy "insurance_requests_update" on public.insurance_requests for update
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer'])))
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin','reviewer'])));
+create policy "insurance_requests_delete" on public.insurance_requests for delete
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])));
 
-drop policy if exists "org members read insurance submissions" on public.insurance_submissions;
-create policy "org members read insurance submissions" on public.insurance_submissions for select
-using (exists (
-  select 1 from public.insurance_requests r
-  join public.companies c on c.id = r.company_id
-  where r.id = insurance_request_id and public.is_org_member(c.organization_id)
-));
+create policy "insurance_submissions_select" on public.insurance_submissions for select
+using (exists (select 1 from public.insurance_requests r join public.companies c on c.id = r.company_id where r.id = insurance_request_id and private.is_org_member(c.organization_id)));
 
-drop policy if exists "org members manage insurance delegations" on public.insurance_delegations;
-create policy "org members manage insurance delegations" on public.insurance_delegations for all
-using (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)))
-with check (exists (select 1 from public.companies c where c.id = company_id and public.is_org_member(c.organization_id)));
+create policy "insurance_delegations_select" on public.insurance_delegations for select
+using (exists (select 1 from public.companies c where c.id = company_id and private.is_org_member(c.organization_id)));
+create policy "insurance_delegations_insert" on public.insurance_delegations for insert
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])));
+create policy "insurance_delegations_update" on public.insurance_delegations for update
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])))
+with check (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])));
+create policy "insurance_delegations_delete" on public.insurance_delegations for delete
+using (exists (select 1 from public.companies c where c.id = company_id and private.has_org_role(c.organization_id,array['owner','admin'])));
 
 create or replace function public.validate_insurance_request(req_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, private
 as $$
 declare
   r public.insurance_requests;
   e public.employees;
   errors jsonb := '[]'::jsonb;
+  org_id uuid;
 begin
+  if auth.uid() is null then raise exception 'authentication required'; end if;
   select * into r from public.insurance_requests where id = req_id;
-  if r.id is null then
-    return jsonb_build_array('요청을 찾을 수 없습니다.');
-  end if;
-
+  if r.id is null then return jsonb_build_array('요청을 찾을 수 없습니다.'); end if;
+  select c.organization_id into org_id from public.companies c where c.id = r.company_id;
+  if not private.is_org_member(org_id) then raise exception 'forbidden'; end if;
   select * into e from public.employees where id = r.employee_id;
-
-  if e.name is null or btrim(e.name) = '' then
-    errors := errors || jsonb_build_array('직원명이 필요합니다.');
-  end if;
-  if r.request_type = '취득' and e.hire_date is null then
-    errors := errors || jsonb_build_array('취득신고에는 입사일이 필요합니다.');
-  end if;
-  if r.request_type = '상실' and e.termination_date is null then
-    errors := errors || jsonb_build_array('상실신고에는 퇴사일이 필요합니다.');
-  end if;
-  if r.monthly_remuneration is null or r.monthly_remuneration < 0 then
-    errors := errors || jsonb_build_array('보수월액을 확인해 주세요.');
-  end if;
-
+  if e.name is null or btrim(e.name) = '' then errors := errors || jsonb_build_array('직원명이 필요합니다.'); end if;
+  if r.request_type = '취득' and e.hire_date is null then errors := errors || jsonb_build_array('취득신고에는 입사일이 필요합니다.'); end if;
+  if r.request_type = '상실' and e.termination_date is null then errors := errors || jsonb_build_array('상실신고에는 퇴사일이 필요합니다.'); end if;
+  if r.monthly_remuneration is null or r.monthly_remuneration < 0 then errors := errors || jsonb_build_array('보수월액을 확인해 주세요.'); end if;
   update public.insurance_requests
-     set validation_errors = errors,
-         status = case when jsonb_array_length(errors) = 0 then '검증완료' else '보완요청' end,
-         updated_at = now()
-   where id = req_id;
-
+  set validation_errors = errors,
+      status = case when jsonb_array_length(errors) = 0 then '검증완료' else '보완요청' end,
+      updated_at = now()
+  where id = req_id;
   return errors;
 end;
 $$;
+revoke all on function public.validate_insurance_request(uuid) from public, anon;
+grant execute on function public.validate_insurance_request(uuid) to authenticated;
 
 comment on table public.insurance_requests is '4대보험 취득/상실/변경 요청 상태 관리. 인증서 원본 및 비밀번호 저장 금지.';
