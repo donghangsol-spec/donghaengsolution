@@ -1,4 +1,4 @@
--- 급여대장 구조/계산/확정우회 방지 smoke test
+-- 급여대장 구조/계산/확정우회/확정후수정 방지 smoke test
 begin;
 
 do $$
@@ -40,6 +40,28 @@ begin
     raise exception 'direct confirmation was not blocked';
   exception when others then
     if sqlerrm='direct confirmation was not blocked' then raise; end if;
+  end;
+end $$;
+
+-- 테스트용 내부 플래그로 확정 상태를 만든 뒤 급여항목 변경과 상태 되돌리기가 잠기는지 확인한다.
+do $$
+declare v_period uuid; v_entry uuid;
+begin
+  select period_id,entry_id into v_period,v_entry from smoke_ids limit 1;
+  perform set_config('app.payroll_status_authorized','1',true);
+  update public.payroll_periods set status='확정' where id=v_period;
+  perform set_config('app.payroll_status_authorized','',true);
+  begin
+    update public.payroll_entries set work_hours=81 where id=v_entry;
+    raise exception 'confirmed entry update was not blocked';
+  exception when others then
+    if sqlerrm='confirmed entry update was not blocked' then raise; end if;
+  end;
+  begin
+    update public.payroll_periods set status='초안' where id=v_period;
+    raise exception 'confirmed status rollback was not blocked';
+  exception when others then
+    if sqlerrm='confirmed status rollback was not blocked' then raise; end if;
   end;
 end $$;
 
