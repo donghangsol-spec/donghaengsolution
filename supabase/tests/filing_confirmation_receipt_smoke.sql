@@ -48,8 +48,8 @@ begin
   insert into public.employees(company_id,name,hire_date,status,payroll_type)
   values(v_company,'FILING GUARD EMPLOYEE',current_date,'재직','월급제') returning id into v_employee;
   insert into public.insurance_requests(
-    company_id,employee_id,request_type,effective_date,status,approved_by,approved_at
-  ) values(v_company,v_employee,'취득',current_date,'승인완료',v_user,now())
+    company_id,employee_id,request_type,effective_date,status
+  ) values(v_company,v_employee,'취득',current_date,'요청접수')
   returning id into v_request;
   insert into public.insurance_filing_jobs(
     insurance_request_id,company_id,provider,status,created_by,preview_hash,preview_created_at
