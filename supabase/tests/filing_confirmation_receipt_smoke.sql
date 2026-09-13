@@ -44,9 +44,9 @@ begin
   values(v_user,'authenticated','authenticated','filing-guard@example.invalid');
 
   insert into public.organizations(name) values('FILING GUARD TEST') returning id into v_org;
-  insert into public.companies(organization_id,name) values(v_org,'FILING GUARD COMPANY') returning id into v v_company;
+  insert into public.companies(organization_id,name) values(v_org,'FILING GUARD COMPANY') returning id into v_company;
   insert into public.employees(company_id,name,hire_date,status,payroll_type)
-  values(v_company,'FILING GUARD EMPLOYEE',current_date_date,'재직','월급제') returning id into v_employee;
+  values(v_company,'FILING GUARD EMPLOYEE',current_date,'재직','월급제') returning id into v_employee;
   insert into public.insurance_requests(
     company_id,employee_id,request_type,effective_date,status,approved_by,approved_at
   ) values(v_company,v_employee,'취득',current_date,'승인완료',v_user,now())
