@@ -7,42 +7,60 @@ const makePreview = () => {
   const preview = { jobId: job.id, maskedCompanyRegistrationNo: "123-**-*****", employeeCount: 2, requestType: "취득" };
   return { ...preview, payloadHash: hashPreview(preview) };
 };
+const confirmationFor = (preview, overrides = {}) => async () => ({ confirmed: true, jobId: job.id, payloadHash: preview.payloadHash, expiresAt: new Date(Date.now() + 60_000).toISOString(), ...overrides });
+const acceptReceipt = async () => ({ accepted: true, duplicate: false });
 
 test("stops for CAPTCHA without bypass and requires a new credential session", async () => {
   let consumed = 0;
-  const coordinator = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ challenge: "CAPTCHA" }) } });
+  const coordinator = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ challenge: "CAPTCHA" }) }, confirmationVerifier: async () => null, receiptRecorder: acceptReceipt });
   const result = await coordinator.prepare(job, async (callback) => { consumed += 1; return callback({}); });
   assert.deepEqual(result, { state: "human_handoff_required", reason: "CAPTCHA", requiresNewCredentialSession: true });
   assert.equal(consumed, 1);
 });
 
-test("requires a matching, unexpired privileged confirmation before submit", async () => {
+test("requires server-verified confirmation and never trusts a caller role", async () => {
   const preview = makePreview();
-  const receipt = { receiptNo: "sandbox-001", payloadHash: preview.payloadHash, environment: "sandbox" };
-  const coordinator = new MacroRunCoordinator({ driver: {
-    runUntilBoundary: async () => ({ preview }),
-    submitConfirmed: async () => receipt,
-  } });
+  let submitted = 0;
+  const coordinator = new MacroRunCoordinator({
+    driver: { runUntilBoundary: async () => ({ preview }), submitConfirmed: async () => { submitted += 1; return {}; } },
+    confirmationVerifier: confirmationFor(preview, { confirmed: false, approverRole: "owner" }),
+    receiptRecorder: acceptReceipt,
+  });
   await coordinator.prepare(job, (callback) => callback({}));
-  await assert.rejects(() => coordinator.submit(job, { jobId: job.id, payloadHash: preview.payloadHash, approverRole: "staff", expiresAt: new Date(Date.now() + 60_000).toISOString() }), /role/);
-  const accepted = await coordinator.submit(job, { jobId: job.id, payloadHash: preview.payloadHash, approverRole: "owner", expiresAt: new Date(Date.now() + 60_000).toISOString() });
-  assert.equal(accepted.receiptNo, "sandbox-001");
+  await assert.rejects(() => coordinator.submit(job, { approverRole: "owner" }), /server confirmation/);
+  assert.equal(submitted, 0);
+});
+
+test("submits only after fresh matching confirmation and records a complete sandbox receipt", async () => {
+  const preview = makePreview();
+  const receipt = { receiptNo: "sandbox-001", adapterRunId: "run-001", payloadHash: preview.payloadHash, environment: "sandbox", externalStatus: "accepted" };
+  let recorded;
+  const coordinator = new MacroRunCoordinator({
+    driver: { runUntilBoundary: async () => ({ preview }), submitConfirmed: async () => receipt },
+    confirmationVerifier: confirmationFor(preview),
+    receiptRecorder: async (value) => { recorded = value; return { accepted: true, duplicate: false }; },
+  });
+  await coordinator.prepare(job, (callback) => callback({}));
+  assert.deepEqual(await coordinator.submit(job), receipt);
+  assert.deepEqual(recorded, { jobId: job.id, receipt });
   assert.equal(coordinator.state, "accepted");
 });
 
-test("blocks production by default and rejects mismatched preview or receipt hashes", async () => {
+test("blocks production and rejects stale confirmation, malformed receipt, or duplicate recording", async () => {
   const preview = makePreview();
-  const production = new MacroRunCoordinator({ driver: {} });
-  await assert.rejects(() => production.prepare({ ...job, environment: "production" }, async () => {}), /disabled/);
+  const required = { confirmationVerifier: confirmationFor(preview), receiptRecorder: acceptReceipt };
+  await assert.rejects(() => new MacroRunCoordinator({ driver: {}, ...required }).prepare({ ...job, environment: "production" }, async () => {}), /disabled/);
 
-  const badPreview = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ preview: { ...preview, payloadHash: "0".repeat(64) } }) } });
-  await assert.rejects(() => badPreview.prepare(job, (callback) => callback({})), /preview hash/);
+  const stale = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ preview }) }, confirmationVerifier: confirmationFor(preview, { expiresAt: new Date(Date.now() - 1).toISOString() }), receiptRecorder: acceptReceipt });
+  await stale.prepare(job, (callback) => callback({}));
+  await assert.rejects(() => stale.submit(job), /expired/);
 
-  const badReceipt = new MacroRunCoordinator({ driver: {
-    runUntilBoundary: async () => ({ preview }),
-    submitConfirmed: async () => ({ receiptNo: "sandbox-002", payloadHash: "f".repeat(64) }),
-  } });
-  await badReceipt.prepare(job, (callback) => callback({}));
-  await assert.rejects(() => badReceipt.submit(job, { jobId: job.id, payloadHash: preview.payloadHash, approverRole: "reviewer", expiresAt: new Date(Date.now() + 60_000).toISOString() }), /receipt validation/);
-  assert.equal(badReceipt.state, "failed");
+  const malformed = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ preview }), submitConfirmed: async () => ({ receiptNo: "sandbox-002", payloadHash: preview.payloadHash, environment: "sandbox" }) }, ...required });
+  await malformed.prepare(job, (callback) => callback({}));
+  await assert.rejects(() => malformed.submit(job), /receipt validation/);
+
+  const duplicate = new MacroRunCoordinator({ driver: { runUntilBoundary: async () => ({ preview }), submitConfirmed: async () => ({ receiptNo: "sandbox-003", adapterRunId: "run-003", payloadHash: preview.payloadHash, environment: "sandbox" }) }, confirmationVerifier: confirmationFor(preview), receiptRecorder: async () => ({ accepted: false, duplicate: true }) });
+  await duplicate.prepare(job, (callback) => callback({}));
+  await assert.rejects(() => duplicate.submit(job), /not accepted/);
+  assert.equal(duplicate.state, "failed");
 });
