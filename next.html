@@ -17,9 +17,10 @@
 <section id="payroll" class="view"><div class="card"><div class="toolbar"><div><div class="sectionTitle">급여대장</div><div class="muted">월급제·시간제 자동초안, 엑셀/CSV/JSON 가져오기, 오류검증, 담당자 확정</div></div><div class="actions"><input id="payMonth" type="month"><button id="makePayroll" class="btn primary">이번 달 초안 생성</button><a id="payrollDetailLink" href="./payroll.html" class="btn secondary" style="text-decoration:none">급여대장 상세 열기</a></div></div></div><div class="card"><div class="tablewrap"><table class="table"><thead><tr><th>귀속월</th><th>상태</th><th>입력</th><th>오류</th><th>주의</th><th>확정일</th></tr></thead><tbody id="payrollBody"></tbody></table></div></div></section>
 <section id="accounting" class="view"><div class="card"><div class="sectionTitle">회계·세무 업무</div><p class="muted">거래내역 분류, 검토함, 원천세 준비 및 감사로그는 기존 회계 화면을 사용합니다.</p><a href="./index.html" class="btn primary" style="display:inline-block;text-decoration:none">회계·세무 화면 열기</a></div></section>
 <div class="footer">동행솔루션 NEXT · 실제 기관 전송 전에는 담당자 검토 및 공식 신고채널 확인이 필요합니다.</div></main></div>
+<script src="/api/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script>
-const sb=window.supabase.createClient('https://xvisvipdbdemfgutzouh.supabase.co','sb_publishable_p14zNLzPxqnO0YlqbVgzwQ_ZHlf91HW',{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
+const cfg=window.__DONGHAENG_CONFIG__||{};if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)throw new Error('Supabase 공개 설정이 없습니다. Vercel 환경변수를 확인하세요.');const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=n=>Number(n||0).toLocaleString('ko-KR');
 let session=null,orgId=null,role=null,companyId=null,companies=[],employees=[],requests=[],details=[],payrolls=[],activeRequest=null;
 const localMonth=()=>{const d=new Date(),m=String(d.getMonth()+1).padStart(2,'0');return d.getFullYear()+'-'+m};$('#payMonth').value=localMonth();
