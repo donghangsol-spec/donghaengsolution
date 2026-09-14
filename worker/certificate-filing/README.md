@@ -33,7 +33,7 @@ Only the in-process filing adapter may call `CredentialSessionManager.consume()`
 
 ### Control broker Windows service
 
-The `windows` scripts install only the local credential control broker. Run the installer from an elevated, code-signed PowerShell session and pass the path to an approved, hash-verified [WinSW](https://github.com/winsw/winsw) executable. It copies the broker to ProgramData, generates a random control token, protects it with Windows DPAPI, restricts the directory ACL, and creates a stopped/manual `LocalService` service. Review and run `Test-ControlService.ps1` before starting it. The repository deliberately does not download or bundle a service-wrapper binary.
+The `windows` scripts install only the local credential control broker. The installer compiles the reviewed `CertificateBrokerService.cs` source on the target PC using the built-in .NET Framework compiler, records the resulting SHA-256, copies the broker to ProgramData, generates a random control token, protects it with Windows DPAPI, restricts the directory ACL, and creates a stopped/manual `LocalService` service. No third-party service-wrapper binary is downloaded or executed. Review the source and run `Test-ControlService.ps1` before starting it.
 
 Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The future macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
 
