@@ -29,17 +29,19 @@ The local controller can then call:
 - authenticated `POST /v1/credential-sessions`
 - authenticated `DELETE /v1/credential-sessions/{sessionRef}`
 
-Only the in-process filing adapter may call `CredentialSessionManager.consume()`. The future browser/macro adapter must consume the session immediately before certificate authentication and must never persist the PKCS#12 file or password.
+Only the in-process filing adapter may call `CredentialSessionManager.consume()`. The browser/macro adapter must consume the session immediately before certificate authentication and must never persist the PKCS#12 file or password.
 
 ### Control broker Windows service
 
 The `windows` scripts install only the local credential control broker. The installer compiles the reviewed `CertificateBrokerService.cs` source on the target PC using the built-in .NET Framework compiler, records the resulting SHA-256, copies the broker to ProgramData, generates a random control token, protects it with Windows DPAPI, restricts the directory ACL, and creates a stopped/manual `LocalService` service. No third-party service-wrapper binary is downloaded or executed. Review the source and run `Test-ControlService.ps1` before starting it.
 
-Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The future macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
+Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
 
 ### Interactive macro runner boundary
 
-`macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, accepts confirmation only from owner/admin/reviewer, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
+`macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, trusts only server-verified confirmation, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
+
+`interactive-runner.mjs` is the sandbox-only composition entry point. It binds the coordinator to `server-gate-client.mjs`, so final confirmation verification and receipt recording cannot be replaced by caller-supplied role data. Its integration test verifies the complete preview-confirmation-receipt request sequence and proves production is rejected before credential or network use.
 
 ### Server confirmation and receipt gate
 
@@ -53,9 +55,10 @@ The function accepts the token only through `x-worker-token`, compares it by SHA
 
 ## Still required before real filing
 
-- deployment of the packaged Windows control service on the approved host and verification output;
-- deployment of the server gate with its token stored in the OS vault and a successful integration test;
+- deployment of the server gate with its token stored in the OS vault and a successful live integration test;
+- restricted interactive Windows account and authenticated local broker connection;
 - in-process Hometax/EDI adapter with explicit human confirmation;
-- sandbox filing with a signed, independently validated receipt;
+- sandbox filing with a signed, independently validated institutional receipt;
 - CAPTCHA/MFA/manual intervention handling without bypass;
+- authenticated owner/staff browser E2E proving role separation and submission denial;
 - audit review proving no certificate material appears in logs, disk, crash dumps, or telemetry.
