@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+Add-Type -AssemblyName System.Security
 $sourceRoot = Split-Path -Parent $PSScriptRoot
 $sourceCs = Join-Path $PSScriptRoot "CertificateBrokerService.cs"
 $serviceExe = Join-Path $InstallRoot "$ServiceName.exe"
