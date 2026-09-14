@@ -15,17 +15,17 @@ function assertHash(value, label) {
 }
 
 export function createServerGateClient({ baseUrl, workerToken, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-  const root = new URL(baseUrl);
+  const root = new URL(baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
   assertHttps(root);
   assertToken(workerToken);
   if (typeof fetchImpl !== "function") throw new Error("fetch implementation required");
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 30_000) throw new Error("invalid gate timeout");
 
   async function post(path, body) {
-    const response = await fetchImpl(new URL(path, root), {
+    const response = await fetchImpl(new URL(path.replace(/^\//, ""), root), {
       method: "POST",
       headers: {
-        authorization: `Bearer ${workerToken}`,
+        "x-worker-token": workerToken,
         "content-type": "application/json",
         "cache-control": "no-store",
       },
@@ -43,7 +43,7 @@ export function createServerGateClient({ baseUrl, workerToken, fetchImpl = globa
     async verifyConfirmation({ jobId, payloadHash, environment }) {
       assertHash(payloadHash, "payloadHash");
       if (environment !== "sandbox") throw new Error("production confirmation is disabled");
-      const result = await post("/v1/filing-confirmations/verify", { jobId, payloadHash, environment });
+      const result = await post("v1/filing-confirmations/verify", { jobId, payloadHash, environment });
       return {
         confirmed: result.confirmed === true,
         jobId: result.jobId,
@@ -55,7 +55,7 @@ export function createServerGateClient({ baseUrl, workerToken, fetchImpl = globa
     async recordReceipt({ jobId, receipt }) {
       assertHash(receipt?.payloadHash, "receipt payloadHash");
       if (receipt?.environment !== "sandbox") throw new Error("production receipt recording is disabled");
-      const result = await post("/v1/filing-receipts", { jobId, receipt });
+      const result = await post("v1/filing-receipts", { jobId, receipt });
       return { accepted: result.accepted === true, duplicate: result.duplicate === true };
     },
   });
