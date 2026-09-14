@@ -20,7 +20,8 @@ try {
   throw "Runner account does not exist: $RunnerAccount"
 }
 
-$adminMembers = @(Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop | ForEach-Object { $_.Name })
+$administratorsGroup = Get-LocalGroup -SID "S-1-5-32-544" -ErrorAction Stop
+$adminMembers = @(Get-LocalGroupMember -Group $administratorsGroup -ErrorAction Stop | ForEach-Object { $_.Name })
 if ($adminMembers -contains $RunnerAccount) {
   throw "Runner account must not be an administrator"
 }
