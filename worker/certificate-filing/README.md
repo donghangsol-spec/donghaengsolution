@@ -41,6 +41,10 @@ Do not run browser UI automation inside this service. Windows services run in no
 
 `macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, accepts confirmation only from owner/admin/reviewer, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
 
+### Signed sandbox receipt
+
+`signed-receipt.mjs` defines an Ed25519 receipt envelope and an independent allowlisted-key verifier. It binds a receipt to the job ID and confirmed payload hash, enforces a short timestamp window, requires an accepted sandbox result, and rejects production labels. `createSandboxSigner()` is test-only simulation support: `SIM-*` receipts are never evidence of an institutional filing and must not unlock production.
+
 ## Still required before real filing
 
 - deployment of the packaged Windows control service on the approved host and verification output;
