@@ -1,0 +1,2 @@
+[functions.filing-gate]
+verify_jwt = false
