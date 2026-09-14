@@ -1,7 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 const CHALLENGES = new Set(["CAPTCHA", "MFA", "CERTIFICATE_SELECTION", "UNEXPECTED_CONFIRMATION"]);
-const APPROVER_ROLES = new Set(["owner", "admin", "reviewer"]);
 
 function sameHash(left, right) {
   const a = Buffer.from(left ?? "");
@@ -21,13 +20,19 @@ export function hashPreview(preview) {
 
 export class MacroRunCoordinator {
   #driver;
+  #confirmationVerifier;
+  #receiptRecorder;
   #allowProduction;
   #state = "idle";
   #preview;
 
-  constructor({ driver, allowProduction = false }) {
+  constructor({ driver, confirmationVerifier, receiptRecorder, allowProduction = false }) {
     if (!driver) throw new Error("macro driver required");
+    if (typeof confirmationVerifier !== "function") throw new Error("server confirmation verifier required");
+    if (typeof receiptRecorder !== "function") throw new Error("server receipt recorder required");
     this.#driver = driver;
+    this.#confirmationVerifier = confirmationVerifier;
+    this.#receiptRecorder = receiptRecorder;
     this.#allowProduction = allowProduction;
   }
 
@@ -53,20 +58,35 @@ export class MacroRunCoordinator {
     return { state: this.#state, preview: structuredClone(this.#preview) };
   }
 
-  async submit(job, confirmation) {
+  async submit(job) {
     if (this.#state !== "awaiting_human_confirmation" || !this.#preview) throw new Error("preview is not awaiting confirmation");
-    if (confirmation.jobId !== job.id || !sameHash(confirmation.payloadHash, this.#preview.payloadHash)) {
-      throw new Error("confirmation is not bound to this preview");
+
+    // Authorization is decided by the server-side source of truth. The interactive
+    // runner never accepts a caller-supplied role or locally fabricated approval.
+    const confirmation = await this.#confirmationVerifier({
+      jobId: job.id,
+      payloadHash: this.#preview.payloadHash,
+      environment: job.environment,
+    });
+    if (!confirmation?.confirmed || confirmation.jobId !== job.id || !sameHash(confirmation.payloadHash, this.#preview.payloadHash)) {
+      throw new Error("server confirmation is not bound to this preview");
     }
-    if (!APPROVER_ROLES.has(confirmation.approverRole)) throw new Error("confirmation role is not allowed");
     const expiresAt = Date.parse(confirmation.expiresAt);
-    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw new Error("confirmation expired");
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw new Error("server confirmation expired");
 
     this.#state = "submitting";
     const result = await this.#driver.submitConfirmed(job, structuredClone(this.#preview));
-    if (!result?.receiptNo || !sameHash(result.payloadHash, this.#preview.payloadHash)) {
+    if (!result?.receiptNo || !result?.adapterRunId || result.environment !== job.environment || !sameHash(result.payloadHash, this.#preview.payloadHash)) {
       this.#state = "failed";
       throw new Error("receipt validation failed");
+    }
+
+    // The server-side recorder owns idempotency and receipt/status validation.
+    // A duplicate or untrusted receipt must fail closed even after the portal call.
+    const recorded = await this.#receiptRecorder({ jobId: job.id, receipt: structuredClone(result) });
+    if (!recorded?.accepted || recorded.duplicate) {
+      this.#state = "failed";
+      throw new Error("receipt was not accepted by server");
     }
     this.#state = "accepted";
     return structuredClone(result);
