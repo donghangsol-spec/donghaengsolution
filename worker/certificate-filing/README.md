@@ -41,6 +41,12 @@ Do not run browser UI automation inside this service. Windows services run in no
 
 `macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, accepts confirmation only from owner/admin/reviewer, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
 
+### Server confirmation and receipt gate
+
+Deploy `supabase/functions/filing-gate` with `FILING_WORKER_TOKEN` set to a randomly generated value of at least 32 bytes. Configure the interactive worker's `server-gate-client.mjs` with the complete function URL ending in `/functions/v1/filing-gate/` and the same secret through the OS credential vault. Never place this token in frontend code, source control, logs, or the business database.
+
+The function accepts the token only through `x-worker-token`, compares it by SHA-256 without an early-exit string comparison, and uses the service role only inside the Edge Function. The worker can only verify a fresh server-side confirmation or record one sandbox receipt. Production requests are rejected in the worker, Edge Function, and database RPC.
+
 ### Signed sandbox receipt
 
 `signed-receipt.mjs` defines an Ed25519 receipt envelope and an independent allowlisted-key verifier. It binds a receipt to the job ID and confirmed payload hash, enforces a short timestamp window, requires an accepted sandbox result, and rejects production labels. `createSandboxSigner()` is test-only simulation support: `SIM-*` receipts are never evidence of an institutional filing and must not unlock production.
@@ -48,6 +54,7 @@ Do not run browser UI automation inside this service. Windows services run in no
 ## Still required before real filing
 
 - deployment of the packaged Windows control service on the approved host and verification output;
+- deployment of the server gate with its token stored in the OS vault and a successful integration test;
 - in-process Hometax/EDI adapter with explicit human confirmation;
 - sandbox filing with a signed, independently validated receipt;
 - CAPTCHA/MFA/manual intervention handling without bypass;
