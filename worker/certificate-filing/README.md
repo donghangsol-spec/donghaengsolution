@@ -31,9 +31,15 @@ The local controller can then call:
 
 Only the in-process filing adapter may call `CredentialSessionManager.consume()`. The future browser/macro adapter must consume the session immediately before certificate authentication and must never persist the PKCS#12 file or password.
 
+### Control broker Windows service
+
+The `windows` scripts install only the local credential control broker. Run the installer from an elevated, code-signed PowerShell session and pass the path to an approved, hash-verified [WinSW](https://github.com/winsw/winsw) executable. It copies the broker to ProgramData, generates a random control token, protects it with Windows DPAPI, restricts the directory ACL, and creates a stopped/manual `LocalService` service. Review and run `Test-ControlService.ps1` before starting it. The repository deliberately does not download or bundle a service-wrapper binary.
+
+Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The future macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
+
 ## Still required before real filing
 
-- Windows service packaging and access-control hardening;
+- deployment of the packaged Windows control service on the approved host and verification output;
 - in-process Hometax/EDI adapter with explicit human confirmation;
 - sandbox filing with a signed, independently validated receipt;
 - CAPTCHA/MFA/manual intervention handling without bypass;
