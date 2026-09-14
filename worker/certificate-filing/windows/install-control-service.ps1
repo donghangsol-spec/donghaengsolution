@@ -33,8 +33,9 @@ $serviceXml = Join-Path $InstallRoot "$ServiceName.xml"
 Copy-Item -LiteralPath $WinSWPath -Destination $serviceExe -Force
 
 $tokenBytes = New-Object byte[] 48
-[Security.Cryptography.RandomNumberGenerator]::Fill($tokenBytes)
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
 try {
+  $rng.GetBytes($tokenBytes)
   $protected = [Security.Cryptography.ProtectedData]::Protect(
     $tokenBytes,
     $null,
@@ -42,6 +43,7 @@ try {
   )
   [IO.File]::WriteAllBytes($secretPath, $protected)
 } finally {
+  $rng.Dispose()
   [Array]::Clear($tokenBytes, 0, $tokenBytes.Length)
 }
 
