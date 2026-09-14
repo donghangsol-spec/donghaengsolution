@@ -93,5 +93,6 @@
 - 데이터베이스와 인증: Supabase
 - 인증 이메일: Resend
 - 대표 발송 도메인: `donghangsolution.co.kr`
+- 운영자 배포 절차: [배포 인계서](docs/DEPLOYMENT_HANDOFF.md)
 
 `main` 병합과 운영 출시 판단은 분리합니다. 기반 코드를 병합하더라도 실제 신고 기능은 관련 보안·기관 연계 게이트가 모두 통과할 때까지 활성화하지 않습니다.
