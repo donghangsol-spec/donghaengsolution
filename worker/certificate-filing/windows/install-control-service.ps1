@@ -3,107 +3,58 @@
 param(
   [string]$ServiceName = "DonghaengCertificateBroker",
   [string]$InstallRoot = "$env:ProgramData\DonghaengSolution\CertificateBroker",
-  [string]$NodePath = "C:\Program Files\nodejs\node.exe",
-  [Parameter(Mandatory)] [string]$WinSWPath
+  [string]$NodePath = "C:\Program Files\nodejs\node.exe"
 )
 
 $ErrorActionPreference = "Stop"
 $sourceRoot = Split-Path -Parent $PSScriptRoot
-$runnerPath = Join-Path $InstallRoot "windows\run-control-service.ps1"
+$sourceCs = Join-Path $PSScriptRoot "CertificateBrokerService.cs"
+$serviceExe = Join-Path $InstallRoot "$ServiceName.exe"
 $secretPath = Join-Path $InstallRoot "control-token.dpapi"
+$csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
-if (-not (Test-Path -LiteralPath $NodePath -PathType Leaf)) {
-  throw "Node.js executable not found: $NodePath"
-}
-if (-not (Test-Path -LiteralPath $WinSWPath -PathType Leaf)) {
-  throw "Approved WinSW executable not found: $WinSWPath"
-}
-if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-  throw "Service already exists: $ServiceName"
-}
+if (-not (Test-Path -LiteralPath $NodePath -PathType Leaf)) { throw "Node.js executable not found: $NodePath" }
+if (-not (Test-Path -LiteralPath $csc -PathType Leaf)) { throw ".NET Framework C# compiler not found: $csc" }
+if (-not (Test-Path -LiteralPath $sourceCs -PathType Leaf)) { throw "Reviewed service source not found: $sourceCs" }
+if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) { throw "Service already exists: $ServiceName" }
 
 New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $sourceRoot "credential-session.mjs") -Destination $InstallRoot -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot "server.mjs") -Destination $InstallRoot -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot "package.json") -Destination $InstallRoot -Force
-New-Item -ItemType Directory -Path (Join-Path $InstallRoot "windows") -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "run-control-service.ps1") -Destination $runnerPath -Force
-$serviceExe = Join-Path $InstallRoot "$ServiceName.exe"
-$serviceXml = Join-Path $InstallRoot "$ServiceName.xml"
-Copy-Item -LiteralPath $WinSWPath -Destination $serviceExe -Force
+Copy-Item -LiteralPath $sourceCs -Destination $InstallRoot -Force
+
+& $csc /nologo /target:exe /optimize+ /out:$serviceExe /reference:System.ServiceProcess.dll /reference:System.Security.dll $sourceCs
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $serviceExe)) { throw "Local service compilation failed: $LASTEXITCODE" }
+$serviceHash = (Get-FileHash -LiteralPath $serviceExe -Algorithm SHA256).Hash
 
 $tokenBytes = New-Object byte[] 48
 $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
 try {
   $rng.GetBytes($tokenBytes)
-  $protected = [Security.Cryptography.ProtectedData]::Protect(
-    $tokenBytes,
-    $null,
-    [Security.Cryptography.DataProtectionScope]::LocalMachine
-  )
+  $protected = [Security.Cryptography.ProtectedData]::Protect($tokenBytes, $null, [Security.Cryptography.DataProtectionScope]::LocalMachine)
   [IO.File]::WriteAllBytes($secretPath, $protected)
+  [Array]::Clear($protected, 0, $protected.Length)
 } finally {
   $rng.Dispose()
   [Array]::Clear($tokenBytes, 0, $tokenBytes.Length)
 }
 
-$powerShell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-$escapedPowerShell = [Security.SecurityElement]::Escape($powerShell)
-$escapedRunner = [Security.SecurityElement]::Escape($runnerPath)
-$escapedInstallRoot = [Security.SecurityElement]::Escape($InstallRoot)
-$escapedNodePath = [Security.SecurityElement]::Escape($NodePath)
-$config = @"
-<service>
-  <id>$ServiceName</id>
-  <name>Donghaeng Certificate Control Broker</name>
-  <description>Local-only credential session broker. It does not run browser automation.</description>
-  <executable>$escapedPowerShell</executable>
-  <arguments>-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File &quot;$escapedRunner&quot; -InstallRoot &quot;$escapedInstallRoot&quot; -NodePath &quot;$escapedNodePath&quot;</arguments>
-  <startmode>Manual</startmode>
-  <serviceaccount>
-    <domain>NT AUTHORITY</domain>
-    <user>LocalService</user>
-    <allowservicelogon>true</allowservicelogon>
-  </serviceaccount>
-  <onfailure action="restart" delay="5 sec" />
-  <onfailure action="restart" delay="15 sec" />
-  <resetfailure>1 day</resetfailure>
-  <logpath>$escapedInstallRoot\logs</logpath>
-  <log mode="roll-by-size">
-    <sizeThreshold>10240</sizeThreshold>
-    <keepFiles>4</keepFiles>
-  </log>
-</service>
-"@
-[IO.File]::WriteAllText($serviceXml, $config, [Text.UTF8Encoding]::new($false))
-New-Item -ItemType Directory -Path (Join-Path $InstallRoot "logs") -Force | Out-Null
-
 $acl = Get-Acl -LiteralPath $InstallRoot
 $acl.SetAccessRuleProtection($true, $false)
 foreach ($identity in @("NT AUTHORITY\SYSTEM", "BUILTIN\Administrators", "NT AUTHORITY\LOCAL SERVICE")) {
-  $rule = New-Object Security.AccessControl.FileSystemAccessRule(
-    $identity,
-    "ReadAndExecute",
-    "ContainerInherit,ObjectInherit",
-    "None",
-    "Allow"
-  )
-  $acl.AddAccessRule($rule)
+  $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule(
+    $identity, "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow"
+  )))
 }
 Set-Acl -LiteralPath $InstallRoot -AclObject $acl
-$logAcl = Get-Acl -LiteralPath (Join-Path $InstallRoot "logs")
-$logAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule(
-  "NT AUTHORITY\LOCAL SERVICE",
-  "Modify",
-  "ContainerInherit,ObjectInherit",
-  "None",
-  "Allow"
-)))
-Set-Acl -LiteralPath (Join-Path $InstallRoot "logs") -AclObject $logAcl
 
-& $serviceExe install
-if ($LASTEXITCODE -ne 0) { throw "WinSW service install failed: $LASTEXITCODE" }
+$binaryPath = '"' + $serviceExe + '"'
+& sc.exe create $ServiceName binPath= $binaryPath start= demand obj= "NT AUTHORITY\LocalService" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Service registration failed: $LASTEXITCODE" }
 & sc.exe sidtype $ServiceName unrestricted | Out-Null
+& sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/15000/""/0 | Out-Null
 
 Write-Host "Installed $ServiceName in stopped/manual mode."
-Write-Host "Sign the PowerShell scripts, verify the approved WinSW hash, run Test-ControlService.ps1, then start only after review."
+Write-Host "Locally compiled service SHA256: $serviceHash"
+Write-Host "Run Test-ControlService.ps1 before starting the service."
