@@ -15,7 +15,8 @@ $user = Get-LocalUser -Name $localName -ErrorAction Stop
 if (-not $user.Enabled) { throw "Runner account is disabled" }
 if ($user.PasswordRequired -eq $false) { throw "Runner account must require a password" }
 
-$adminMembers = @(Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop | ForEach-Object { $_.Name })
+$administratorsGroup = Get-LocalGroup -SID "S-1-5-32-544" -ErrorAction Stop
+$adminMembers = @(Get-LocalGroupMember -Group $administratorsGroup -ErrorAction Stop | ForEach-Object { $_.Name })
 if ($adminMembers -contains $RunnerAccount) { throw "Runner account is an administrator" }
 
 $acl = Get-Acl -LiteralPath $InstallRoot
