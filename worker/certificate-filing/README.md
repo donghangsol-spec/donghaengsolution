@@ -37,6 +37,12 @@ The `windows` scripts install only the local credential control broker. The inst
 
 Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
 
+### Restricted interactive runner installation
+
+After creating the non-administrator `DonghaengMacroRunner` local account, run `windows/install-interactive-runner.ps1` from an elevated PowerShell session. It installs only reviewed runner code under ProgramData, disables inherited ACLs, grants the runner account read/execute access, and keeps write/full-control access with SYSTEM and Administrators.
+
+Run `windows/Test-InteractiveRunner.ps1` before the first interactive login. The test fails if the account is an administrator, password-less or disabled, if the runner can modify its installed code, if unexpected ACL principals exist, or if certificate/secret-looking files are present. It emits SHA-256 values for every installed runner file. The script does not store a worker token, certificate, or password.
+
 ### Interactive macro runner boundary
 
 `macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, trusts only server-verified confirmation, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
