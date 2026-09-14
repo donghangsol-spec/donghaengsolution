@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test credential-session.test.mjs"
+    "test": "node --test credential-session.test.mjs macro-runner.test.mjs"
   },
   "engines": {
     "node": ">=22"
