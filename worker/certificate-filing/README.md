@@ -37,6 +37,10 @@ The `windows` scripts install only the local credential control broker. Run the 
 
 Do not run browser UI automation inside this service. Windows services run in non-interactive Session 0. The future macro adapter must run under a separate restricted interactive Windows account and communicate with the broker through an authenticated local channel.
 
+### Interactive macro runner boundary
+
+`macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, accepts confirmation only from owner/admin/reviewer, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
+
 ## Still required before real filing
 
 - deployment of the packaged Windows control service on the approved host and verification output;
