@@ -34,8 +34,19 @@ foreach ($principal in $expected) {
 }
 
 $runnerRules = @($rules | Where-Object { $_.IdentityReference.Value -eq $RunnerAccount })
-$dangerousRights = [Security.AccessControl.FileSystemRights]"Write, Modify, FullControl, ChangePermissions, TakeOwnership"
-if ($runnerRules | Where-Object { ($_.FileSystemRights -band $dangerousRights) -ne 0 }) {
+$dangerousRights =
+  [Security.AccessControl.FileSystemRights]::WriteData -bor
+  [Security.AccessControl.FileSystemRights]::AppendData -bor
+  [Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+  [Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+  [Security.AccessControl.FileSystemRights]::Delete -bor
+  [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+  [Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+  [Security.AccessControl.FileSystemRights]::TakeOwnership
+if ($runnerRules | Where-Object {
+  $_.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+  ($_.FileSystemRights -band $dangerousRights) -ne 0
+}) {
   throw "Runner account has write or administrative file rights"
 }
 
