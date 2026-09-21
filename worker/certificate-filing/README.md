@@ -43,6 +43,17 @@ After creating the non-administrator `DonghaengMacroRunner` local account, run `
 
 Run `windows/Test-InteractiveRunner.ps1` before the first interactive login. The test fails if the account is an administrator, password-less or disabled, if the runner can modify its installed code, if unexpected ACL principals exist, or if certificate/secret-looking files are present. It emits SHA-256 values for every installed runner file. The script does not store a worker token, certificate, or password.
 
+### One-step sandbox runner preparation
+
+From an elevated PowerShell session in this directory, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\windows\Prepare-SandboxRunner.ps1
+```
+
+The script creates the dedicated non-administrator account only when it is missing, installs the reviewed five runner files, and immediately runs the ACL/account/secret-file checks. It does not reset an existing account password, store a certificate or token, or enable live institutional submission. A passing result must show `Status = SANDBOX_RUNNER_READY`, `RunnerIsAdministrator = False`, `RunnerReadExecuteOnly = True`, `ForbiddenSecretFiles = 0`, and `LiveInstitutionSubmission = False`.
+
 ### Interactive macro runner boundary
 
 `macro-runner.mjs` defines the fail-closed coordination boundary for that separate interactive runner. It disables production by default, stops rather than bypassing CAPTCHA/MFA/certificate-selection/unexpected confirmations, verifies the canonical SHA-256 preview, trusts only server-verified confirmation, and rejects mismatched receipts. Portal-specific selectors and real submission clicks are deliberately not included until an approved sandbox target and Windows host are available.
