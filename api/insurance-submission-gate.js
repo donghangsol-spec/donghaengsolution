@@ -1,13 +1,14 @@
-const jsonHeaders = {
-  'Content-Type': 'application/json; charset=utf-8',
-  'Cache-Control': 'no-store, max-age=0',
-  'X-Content-Type-Options': 'nosniff',
-};
+function setJsonHeaders(res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+}
 
 export default function handler(req, res) {
+  setJsonHeaders(res);
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    return res.status(405).setHeader(jsonHeaders).json({ error: 'method_not_allowed' });
+    return res.status(405).json({ error: 'method_not_allowed' });
   }
 
   const sandboxMode = process.env.INSURANCE_SANDBOX_MODE === 'true';
@@ -26,7 +27,7 @@ export default function handler(req, res) {
     live_institution_submission: false,
   };
 
-  return res.status(200).setHeader(jsonHeaders).json({
+  return res.status(200).json({
     status: sandboxReady ? 'SANDBOX_READY' : 'BLOCKED',
     checks,
     message: sandboxReady
