@@ -1,69 +1,226 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f172a">
-<title>동행솔루션 세무 AX</title>
-<style>
-:root{--bg:#f1f5f9;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--nav:#0f172a;--accent:#0f766e;--accent2:#115e59}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}.auth-gate{position:fixed;inset:0;z-index:999;background:rgba(15,23,42,.94);display:flex;align-items:center;justify-content:center;padding:20px}.auth-gate.hidden{display:none}.auth-box{width:min(440px,100%);background:#fff;border-radius:20px;padding:28px}.auth-box input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:12px 0}.auth-status,.muted{font-size:12px;color:var(--muted)}.shell{display:flex;min-height:100vh}.side{width:238px;background:var(--nav);color:#fff;padding:24px 18px;position:fixed;inset:0 auto 0 0}.brand{font-weight:900;font-size:21px;line-height:1.2;margin-bottom:24px}.brand small{display:block;color:#94a3b8;font-size:12px;margin-top:5px}.side nav{display:grid;gap:6px}.nav{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:11px 13px;border-radius:10px;cursor:pointer}.nav.active,.nav:hover{background:#1e293b;color:#fff}.main{margin-left:238px;width:calc(100% - 238px);padding:26px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:22px}.top h1{margin:0;font-size:28px}.pill{background:#ccfbf1;color:#115e59;padding:8px 12px;border-radius:999px;font-weight:800;font-size:12px}.sessionbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.view{display:none}.view.active{display:block}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(15,23,42,.04)}.kpi-label{font-size:12px;color:var(--muted)}.kpi{font-size:30px;font-weight:900;margin-top:5px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.notice,.oknotice{padding:12px;border-radius:10px;font-size:13px}.role-notice{margin-bottom:12px}.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.oknotice{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}.toolbar,.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar{justify-content:space-between;margin-bottom:12px}.actions{margin-top:9px}.btn{border:0;border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent2)}.secondary{background:#e2e8f0;color:#0f172a}.danger{background:#fee2e2;color:#991b1b}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:12px;min-width:800px}.table th,.table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.table th{background:#f8fafc}.badge{display:inline-block;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:800}.review{background:#fef3c7;color:#92400e}.need{background:#fee2e2;color:#991b1b}.draft{background:#dbeafe;color:#1d4ed8}.approved{background:#dcfce7;color:#166534}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid label{font-size:12px;font-weight:800}.formgrid input,.formgrid select{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid var(--line);border-radius:9px;background:#fff}.checks{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.summary-row{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:6px 0;font-size:13px}.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:24px;border-radius:18px;margin-bottom:14px}.hero h2{font-size:24px;margin:0 0 8px}.hero p{margin:0;color:#cbd5e1;line-height:1.6}.footer{margin-top:18px;font-size:11px;color:#64748b}
-@media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.side{width:205px}.main{margin-left:205px;width:calc(100% - 205px)}}@media(max-width:700px){.shell{display:block}.side{position:static;width:100%;padding:16px}.side nav{grid-template-columns:repeat(2,1fr)}.main{margin:0;width:100%;padding:14px}.top{align-items:flex-start;flex-direction:column}.cards{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}}
-</style></head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#13233e">
+<title>복지 현장의 든든한 동행 | 동행솔루션</title>
+<meta name="description" content="회계·세무, 평가·컨설팅, 사무자동화부터 교육과 인지프로그램까지. 동행솔루션과 함께하세요.">
+<meta property="og:title" content="복지 현장의 든든한 동행 | 동행솔루션">
+<meta property="og:description" content="회계·세무, 평가·컨설팅, 사무자동화부터 교육과 인지프로그램까지. 동행솔루션과 함께하세요.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://donghangsolution.co.kr/">
+<link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/site.js" defer>
+</script>
+</head>
 <body>
-<div id="authGate" class="auth-gate"><div class="auth-box"><div class="brand" style="color:#0f172a;margin-bottom:12px">동행솔루션<small style="color:#64748b">TAX & ACCOUNTING AX · CLOUD ALPHA</small></div><div id="passwordLogin"><h2>이메일·비밀번호 로그인</h2><p class="muted">등록된 이메일과 비밀번호를 입력해 주세요.</p><input id="loginEmail" type="email" autocomplete="email" inputmode="email" placeholder="name@example.com"><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" placeholder="비밀번호 (8자 이상)"><button class="btn primary" id="signInPassword" style="width:100%">로그인</button><button class="btn secondary" id="resetPassword" style="width:100%;margin-top:8px">비밀번호 설정·재설정 이메일 보내기</button></div><div id="passwordRecovery" hidden><h2>새 비밀번호 설정</h2><p class="muted">8자 이상의 새 비밀번호를 입력해 주세요.</p><input id="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="새 비밀번호 (8자 이상)"><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="새 비밀번호 확인"><button class="btn primary" id="updatePassword" style="width:100%">비밀번호 저장</button></div><div id="authStatus" class="auth-status" role="status" aria-live="polite"></div></div></div>
-<div class="shell"><aside class="side"><div class="brand">동행솔루션<small>TAX & ACCOUNTING AX · PUBLIC ALPHA</small></div><nav><button class="nav active" data-view="dashboard">대시보드</button><button class="nav" data-view="company">사업장</button><button class="nav" data-view="transactions">거래내역</button><button class="nav" data-view="review">검토함</button><button class="nav" data-view="payroll">급여·신고</button><button class="nav" data-view="insurance">4대보험</button><button class="nav" data-view="audit">감사로그</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">대시보드</h1><div class="muted">수집 → AX 추천 → 검토/보완 → 담당자 승인 → 신고 준비</div></div><div class="sessionbar"><div class="pill" id="cloudStatus">연결 확인 중</div><div class="pill" id="companyPill">사업장 미선택</div><button class="btn secondary" id="signOutBtn">로그아웃</button></div></header>
-<section id="dashboard" class="view active"><div class="hero"><h2>장기요양기관 회계업무를 승인 중심 AX로</h2><p>거래 분류와 신고자료는 시스템이 초안을 만들고 최종 확정은 담당자가 수행합니다. 4대보험은 직원 입·퇴사 요청부터 처리현황까지 같은 서비스에서 관리합니다.</p></div><div class="cards"><div class="card"><div class="kpi-label">대상 거래</div><div class="kpi" id="kAll">0</div></div><div class="card"><div class="kpi-label">검토필요</div><div class="kpi" id="kReview">0</div></div><div class="card"><div class="kpi-label">보완요청</div><div class="kpi" id="kNeed">0</div></div><div class="card"><div class="kpi-label">승인완료</div><div class="kpi" id="kApproved">0</div></div></div><div class="grid2"><div class="card"><h3>처리 원칙</h3><div class="oknotice">자동확정 없음 · 서버 권한검사 · 감사이력 저장 · 인증서 비밀번호 미수집</div></div><div class="card"><h3>4대보험 자동화</h3><p class="muted">직원 등록 → 요청 → 자동검증 → 승인대기 → 담당자 승인 → 제출대기 → 접수/처리결과</p></div></div></section>
-<section id="company" class="view"><div class="card"><h3>사업장 설정</h3><div id="companyRoleNotice" class="oknotice role-notice" hidden>직원 계정은 사업장 설정을 조회만 할 수 있습니다.</div><div class="formgrid"><label>사업장명<input id="companyName"></label><label>회계유형<select id="accountType"><option>비영리</option><option>영리</option></select></label><label>세부유형<select id="companyType"><option>장기요양기관</option><option>사회복지시설</option><option>기타</option></select></label><label>회계기준<input value="장기요양기관 재무·회계 규칙" disabled></label></div><div class="actions"><button class="btn primary" id="saveCompany">저장</button></div></div></section>
-<section id="transactions" class="view"><div class="card"><div class="toolbar"><div><h3>거래내역</h3><div class="muted">권장 CSV: 거래일,적요,입금,출금</div></div><div><input type="file" id="csv" accept=".csv"> <button class="btn secondary" id="sampleCsv">CSV 템플릿</button></div></div><div class="tablewrap"><table class="table"><thead><tr><th>ID</th><th>일자</th><th>적요</th><th>입금</th><th>출금</th><th>추천</th><th>신뢰도</th><th>상태</th><th>작업</th></tr></thead><tbody id="txBody"></tbody></table></div></div></section>
-<section id="review" class="view"><div class="card"><h3>검토함</h3><div id="reviewList"></div></div></section>
-<section id="payroll" class="view"><div class="grid2"><div class="card"><h3>원천세 신고 준비</h3><div class="notice">현재 알파에서는 신고기관으로 실제 전송하지 않습니다.</div><div id="withSummary"></div><div class="actions"><button class="btn secondary" onclick="makeFiling('withholding')">자료 생성</button><button class="btn primary" id="approveWithholding" onclick="approveFiling('withholding')">담당자 승인</button></div></div><div class="card"><h3>4대보험 신고 준비</h3><div class="notice">직원별 취득·상실 업무는 4대보험 메뉴에서 관리합니다.</div><div id="insSummary"></div><div class="actions"><button class="btn secondary" onclick="openInsurance()">4대보험 업무 열기</button></div></div></div></section>
-<section id="insurance" class="view"><div class="cards"><div class="card"><div class="kpi-label">등록 직원</div><div class="kpi" id="iEmployees">0</div></div><div class="card"><div class="kpi-label">요청 진행중</div><div class="kpi" id="iPending">0</div></div><div class="card"><div class="kpi-label">승인/제출대기</div><div class="kpi" id="iReady">0</div></div><div class="card"><div class="kpi-label">처리완료</div><div class="kpi" id="iDone">0</div></div></div>
-<div class="grid2"><div class="card"><h3>직원 등록</h3><div class="formgrid"><label>직원명<input id="empName"></label><label>직원번호<input id="empNo"></label><label>생년월일<input id="empBirth" type="date"></label><label>입사일<input id="empHire" type="date"></label><label>퇴사일<input id="empTermination" type="date"></label><label>월 보수<input id="empSalary" type="number" min="0"></label><label>주 소정근로시간<input id="empHours" type="number" min="0" step="0.5"></label><label>고용형태<select id="empType"><option>정규직</option><option>계약직</option><option>일용직</option><option>단시간근로자</option><option>기타</option></select></label><label>상태<select id="empStatus"><option>재직</option><option>입사예정</option><option>퇴사예정</option><option>퇴사</option></select></label></div><div class="notice" style="margin-top:12px">주민등록번호 원문과 공동인증서 비밀번호는 수집하지 않습니다.</div><div class="actions"><button class="btn primary" id="saveEmployee">직원 저장</button><button class="btn secondary" id="cancelEmployeeEdit" hidden>수정 취소</button></div></div>
-<div class="card"><h3>취득·상실 신고 요청</h3><div class="formgrid"><label>직원<select id="reqEmployee"></select></label><label>신고유형<select id="reqType"><option>취득</option><option>상실</option><option>변경</option></select></label><label>적용일<input id="reqDate" type="date"></label><label>보수월액<input id="reqSalary" type="number" min="0"></label><label>상실사유<input id="reqLossReason"></label></div><div class="checks"><label><input type="checkbox" id="reqNp" checked> 국민연금</label><label><input type="checkbox" id="reqHi" checked> 건강보험</label><label><input type="checkbox" id="reqEi" checked> 고용보험</label><label><input type="checkbox" id="reqIa" checked> 산재보험</label></div><div class="actions"><button class="btn primary" id="createInsuranceRequest">신고 요청</button></div><div class="muted" style="margin-top:10px">검증 통과 시 승인대기 상태로 이동합니다.</div></div></div>
-<div class="card" style="margin-top:14px"><div class="toolbar"><div><h3>직원 목록</h3><div class="muted">사업장 소속 직원</div></div><button class="btn secondary" onclick="loadInsuranceData()">새로고침</button></div><div class="tablewrap"><table class="table"><thead><tr><th>직원</th><th>생년월일</th><th>입사일</th><th>퇴사일</th><th>월 보수</th><th>근로시간</th><th>상태</th><th>신원정보</th><th>작업</th></tr></thead><tbody id="employeeBody"></tbody></table></div></div>
-<div class="card" style="margin-top:14px"><h3>신고 요청·처리현황</h3><div class="tablewrap"><table class="table"><thead><tr><th>요청일</th><th>직원</th><th>유형</th><th>적용일</th><th>보험</th><th>보수월액</th><th>상태</th><th>접수/오류</th><th>작업</th></tr></thead><tbody id="requestBody"></tbody></table></div></div>
-<div id="insuranceDetailCard" class="card" style="margin-top:14px" hidden><div class="toolbar"><div><h3>보험별 상세 검토</h3><div id="insuranceDetailTitle" class="muted">승인 전에 확인필요 항목을 검토해 주세요.</div></div><button class="btn secondary" onclick="closeInsuranceDetails()">닫기</button></div><div class="tablewrap"><table class="table"><thead><tr><th>보험</th><th>적용일</th><th>보수월액</th><th>주시간</th><th>판정</th><th>판정 근거</th><th>검토</th></tr></thead><tbody id="insuranceDetailBody"></tbody></table></div><div class="muted" style="margin-top:10px">‘확인필요’ 항목을 모두 검토확인한 뒤 승인할 수 있습니다.</div></div>
-<div class="card" style="margin-top:14px"><h3>업무대행 위임 상태</h3><div id="delegationBox" class="muted">확인 중</div></div>
-<div class="card" style="margin-top:14px"><h3>신원정보·제출 보안 게이트</h3><div class="notice">주민등록번호 원문은 브라우저와 Supabase 공개 테이블에 저장하지 않습니다.</div><div class="summary-row"><span>서버 제출 게이트</span><b id="serverGateStatus" class="badge need">확인 중</b></div><div class="summary-row"><span>제출용 신원정보 보안연계</span><b id="identityLinkStatus" class="badge need">미연동</b></div><div class="summary-row"><span>실제 공단 제출</span><b id="liveSubmissionStatus" class="badge need">차단 유지</b></div><div class="summary-row"><span>향후 처리 방식</span><b>승인 직전 보안입력 → trusted broker 전달 → 원문 즉시 파기</b></div><div id="submissionGateMessage" class="muted" style="margin-top:10px">서버 차단상태를 확인하고 있습니다.</div><div class="actions"><button id="secureSubmissionButton" class="btn secondary" disabled>보안연계 완료 전 제출 불가</button></div></div></section>
-<section id="audit" class="view"><div class="card"><div class="toolbar"><h3>감사로그</h3><button class="btn secondary" id="exportLog">JSON 내보내기</button></div><div class="tablewrap"><table class="table"><thead><tr><th>시간</th><th>작업</th><th>대상</th><th>내용</th></tr></thead><tbody id="auditBody"></tbody></table></div></div></section>
-<div class="footer">동행솔루션 세무 AX Cloud Alpha · 실제 기관 전송은 trusted server/공식 연계 채널 구현 후 활성화</div></main></div>
-<script src="/api/config"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script><script>
-const {supabaseUrl:SUPABASE_URL,supabaseAnonKey:SUPABASE_KEY}=window.__DONGHAENG_CONFIG__||{};if(!SUPABASE_URL||!SUPABASE_KEY)throw new Error('Supabase 공개 설정이 없습니다. Vercel 환경변수를 확인하세요.');const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});const $=s=>document.querySelector(s),money=n=>Number(n||0).toLocaleString('ko-KR'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let session=null,orgId=null,cloudCompanyId=null,cloudRole=null,company={name:'미지정 사업장',account:'비영리',type:'장기요양기관'},tx=[],audit=[],filing={withholding:'미생성'},employees=[],insuranceRequests=[],insuranceSubmissions=[],insuranceDetails=[],delegations=[],editingEmployeeId=null,activeInsuranceRequestId=null;
-const rules=[{k:['급여','월급'],d:'out',c:'01/11/111',n:'급여',p:.95},{k:['4대보험','사회보험','국민연금','건강보험','고용보험'],d:'out',c:'01/11/116',n:'사회보험부담금',p:.92},{k:['퇴직금','퇴직적립'],d:'out',c:'01/11/115',n:'퇴직금 및 퇴직적립금',p:.92},{k:['주유','주유소','정비','타이어','세차'],d:'out',c:'01/13/135',n:'차량비',p:.88},{k:['전기','전화','통신','수도','가스','우편','보험료'],d:'out',c:'01/13/133',n:'공공요금 및 제세공과금',p:.88},{k:['문구','사무용품','복사','인쇄','수수료'],d:'out',c:'01/13/132',n:'수용비 및 수수료',p:.84},{k:['장기요양','재가장기요양','공단급여'],d:'in',c:'06/61/611',n:'장기요양급여수입',p:.95},{k:['가산'],d:'in',c:'06/61/612',n:'가산금수입',p:.88},{k:['본인부담'],d:'in',c:'01/11/112',n:'본인부담금수입',p:.88}];
-function classify(t){const dir=Number(t.inc)>0?'in':'out',text=String(t.desc||'').toLowerCase(),r=rules.find(x=>x.d===dir&&x.k.some(k=>text.includes(k.toLowerCase())));return {...t,code:r?r.c:'-',name:r?r.n:'미분류',confidence:r?r.p:.35,status:r?(r.p>=.9?'검토필요':'AI초안'):'보완요청'}}function badge(s){const c=['승인완료','검증완료','처리완료','접수완료'].includes(s)?'approved':['보완요청','반려'].includes(s)?'need':['요청접수','검증필요','승인대기','제출대기'].includes(s)?'draft':'review';return '<span class="badge '+c+'">'+esc(s)+'</span>'}
-function mapDbTx(x){return {dbid:x.id,id:x.external_id||String(x.id).slice(0,8),date:x.transaction_date,desc:x.description,inc:Number(x.amount_in||0),out:Number(x.amount_out||0),code:x.account_code||'-',name:x.account_name||'미분류',confidence:Number(x.confidence??.35),status:x.status}}
-function canManageCompany(){return cloudRole==='owner'}function canApproveWorkflow(){return ['owner','admin','reviewer'].includes(cloudRole)}function applyCompanyRoleUi(){const editable=canManageCompany();['#companyName','#accountType','#companyType'].forEach(s=>{$(s).disabled=!editable});$('#saveCompany').hidden=!editable;$('#companyRoleNotice').hidden=editable;const approvalButton=$('#approveWithholding');if(approvalButton)approvalButton.hidden=!canApproveWorkflow()}function render(){if(!$('#companyName'))return;$('#companyPill').textContent=company.name+' · '+company.account;$('#companyName').value=company.name;$('#accountType').value=company.account;$('#companyType').value=company.type;$('#kAll').textContent=tx.length;$('#kReview').textContent=tx.filter(x=>['검토필요','AI초안'].includes(x.status)).length;$('#kNeed').textContent=tx.filter(x=>x.status==='보완요청').length;$('#kApproved').textContent=tx.filter(x=>x.status==='승인완료').length;$('#txBody').innerHTML=tx.map(x=>'<tr><td>'+esc(x.id)+'</td><td>'+esc(x.date)+'</td><td>'+esc(x.desc)+'</td><td>'+money(x.inc)+'</td><td>'+money(x.out)+'</td><td>'+esc(x.code)+'<br><span class="muted">'+esc(x.name)+'</span></td><td>'+Math.round(x.confidence*100)+'%</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="approve(\''+x.id+'\')">승인</button></td></tr>').join('');const pending=tx.filter(x=>x.status!=='승인완료');$('#reviewList').innerHTML=pending.map(x=>'<div class="card" style="margin-bottom:8px"><b>'+esc(x.id)+' · '+esc(x.desc)+'</b><div class="muted">'+money(x.inc||x.out)+'원 · '+esc(x.code)+' '+esc(x.name)+' · '+Math.round(x.confidence*100)+'%</div><div class="actions"><button class="btn primary" onclick="approve(\''+x.id+'\')">승인</button><button class="btn secondary" onclick="editTx(\''+x.id+'\')">분류수정</button><button class="btn danger" onclick="need(\''+x.id+'\')">보완요청</button></div></div>').join('')||'<p class="muted">검토할 거래가 없습니다.</p>';renderFiling();renderInsurance();renderAudit();applyCompanyRoleUi()}
-async function approve(id){const x=tx.find(v=>v.id===id);if(!x||x.code==='-')return alert('미분류 거래는 승인할 수 없습니다.');if(x.dbid){const {error}=await sb.from('transactions').update({status:'승인완료',approved_by:session.user.id,approved_at:new Date().toISOString()}).eq('id',x.dbid);if(error)return alert(error.message)}x.status='승인완료';render()}async function editTx(id){const x=tx.find(v=>v.id===id);if(!x)return;const code=prompt('관/항/목 코드',x.code);if(!code)return;const name=prompt('과목명',x.name)||x.name;const {error}=x.dbid?await sb.from('transactions').update({account_code:code,account_name:name,confidence:1,status:'검토필요'}).eq('id',x.dbid):{error:null};if(error)return alert(error.message);x.code=code;x.name=name;x.confidence=1;x.status='검토필요';render()}async function need(id){const x=tx.find(v=>v.id===id);if(!x)return;const {error}=x.dbid?await sb.from('transactions').update({status:'보완요청'}).eq('id',x.dbid):{error:null};if(error)return alert(error.message);x.status='보완요청';render()}
-function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];const h=lines[0].split(',').map(v=>v.trim()),find=a=>h.findIndex(v=>a.includes(v.replace(/\s/g,''))),di=find(['거래일','일자','날짜']),de=find(['적요','내용','거래내용']),ii=find(['입금','수입','입금액']),oi=find(['출금','지출','출금액']);return lines.slice(1).map((line,i)=>{const c=line.split(',').map(v=>v.replace(/^"|"$/g,'').trim());return classify({id:'UP-'+Date.now()+'-'+i,date:c[di]||'',desc:c[de]||'',inc:Number((c[ii]||'0').replace(/[,₩]/g,'')),out:Number((c[oi]||'0').replace(/[,₩]/g,''))})})}
-$('#csv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const rows=parseCsv(r.result);if(!rows.length)return alert('읽을 수 있는 거래가 없습니다.');if(!session||!cloudCompanyId)return alert('로그인과 사업장 연결이 필요합니다.');const payload=rows.map(x=>({company_id:cloudCompanyId,external_id:x.id,transaction_date:x.date,description:x.desc,amount_in:x.inc,amount_out:x.out,account_code:x.code==='-'?null:x.code,account_name:x.name==='미분류'?null:x.name,confidence:x.confidence,status:x.status})),{data,error}=await sb.from('transactions').insert(payload).select();if(error)return alert(error.message);tx.push(...data.map(mapDbTx));render()};r.readAsText(f,'utf-8')};$('#sampleCsv').onclick=()=>download('거래일,적요,입금,출금\n2026-09-01,예시거래,0,10000','거래업로드_템플릿.csv','text/csv;charset=utf-8');
-$('#saveCompany').onclick=async()=>{if(!canManageCompany())return alert('사업장 설정은 소유자만 변경할 수 있습니다.');const next={name:$('#companyName').value.trim()||'미지정 사업장',account:$('#accountType').value,type:$('#companyType').value};if(!session||!orgId)return alert('로그인이 필요합니다.');let error;if(cloudCompanyId){({error}=await sb.from('companies').update({name:next.name,account_type:next.account,company_type:next.type,updated_at:new Date().toISOString()}).eq('id',cloudCompanyId))}else{const res=await sb.from('companies').insert({organization_id:orgId,name:next.name,account_type:next.account,company_type:next.type}).select().single();error=res.error;if(res.data)cloudCompanyId=res.data.id}if(error)return alert(error.message);company=next;await loadInsuranceData();render()};
-function renderFiling(){const approved=tx.filter(x=>x.status==='승인완료');$('#withSummary').innerHTML='<div class="summary-row"><span>승인 거래</span><b>'+approved.length+'건</b></div><div class="summary-row"><span>상태</span><b>'+filing.withholding+'</b></div>';$('#insSummary').innerHTML='<div class="summary-row"><span>4대보험 요청</span><b>'+insuranceRequests.length+'건</b></div><div class="summary-row"><span>처리완료</span><b>'+insuranceRequests.filter(x=>x.status==='처리완료').length+'건</b></div>'}function makeFiling(k){filing[k]='생성완료';render()}function approveFiling(k){if(!canApproveWorkflow())return alert('담당자 승인 권한이 없습니다.');if(filing[k]==='미생성')return alert('먼저 신고자료를 생성하세요.');filing[k]='승인완료';render()}function openInsurance(){$('.nav[data-view="insurance"]').click()}
-function insuranceNames(r){return [r.national_pension?'연금':'',r.health_insurance?'건강':'',r.employment_insurance?'고용':'',r.industrial_accident?'산재':''].filter(Boolean).join('·')}function latestSubmission(id){return insuranceSubmissions.find(s=>s.insurance_request_id===id)}
-function renderInsurance(){if(!$('#employeeBody'))return;$('#iEmployees').textContent=employees.length;$('#iPending').textContent=insuranceRequests.filter(r=>!['승인완료','제출대기','접수완료','처리완료','취소'].includes(r.status)).length;$('#iReady').textContent=insuranceRequests.filter(r=>['승인완료','제출대기'].includes(r.status)).length;$('#iDone').textContent=insuranceRequests.filter(r=>r.status==='처리완료').length;$('#reqEmployee').innerHTML=employees.map(e=>'<option value="'+e.id+'">'+esc(e.name)+(e.employee_no?' · '+esc(e.employee_no):'')+'</option>').join('')||'<option value="">직원을 먼저 등록하세요</option>';$('#employeeBody').innerHTML=employees.map(e=>'<tr><td><b>'+esc(e.name)+'</b><br><span class="muted">'+esc(e.employee_no||'')+'</span></td><td>'+esc(e.birth_date||'-')+'</td><td>'+esc(e.hire_date||'-')+'</td><td>'+esc(e.termination_date||'-')+'</td><td>'+money(e.monthly_remuneration)+'원</td><td>'+esc(e.weekly_hours??'-')+'</td><td>'+badge(e.status)+'</td><td><span class="badge need">미연동</span></td><td><button class="btn secondary" onclick="prepareRequest(\''+e.id+'\')">신고요청</button> <button class="btn secondary" onclick="editEmployee(\''+e.id+'\')">수정</button></td></tr>').join('')||'<tr><td colspan="9">등록된 직원이 없습니다.</td></tr>';const em=Object.fromEntries(employees.map(e=>[e.id,e]));$('#requestBody').innerHTML=insuranceRequests.map(r=>{const s=latestSubmission(r.id),result=s?(esc(s.external_receipt_no||'-')+(s.external_status?'<br>'+esc(s.external_status):'')+(s.error_message?'<br><span class="muted">'+esc(s.error_message)+'</span>':'')):'-';return '<tr><td>'+new Date(r.requested_at).toLocaleDateString('ko-KR')+'</td><td>'+esc(em[r.employee_id]?.name||'-')+'</td><td><b>'+esc(r.request_type)+'</b></td><td>'+esc(r.effective_date)+'</td><td>'+esc(insuranceNames(r))+'</td><td>'+money(r.monthly_remuneration)+'원</td><td>'+badge(r.status)+(Array.isArray(r.validation_errors)&&r.validation_errors.length?'<br><span class="muted">'+esc(r.validation_errors.join(' / '))+'</span>':'')+'</td><td>'+result+'</td><td>'+requestActions(r)+'</td></tr>'}).join('')||'<tr><td colspan="9">신고 요청이 없습니다.</td></tr>';const d=delegations[0];$('#delegationBox').innerHTML=d?badge(d.status)+' · '+esc(d.delegate_type)+(d.valid_until?' · 유효기간 '+esc(d.valid_until):''):'업무대행 위임이 등록되지 않았습니다. 실제 자동제출 전 확인이 필요합니다.'}
-function requestActions(r){let h='<button class="btn secondary" onclick="validateInsurance(\''+r.id+'\')">검증</button> <button class="btn secondary" onclick="reviewInsuranceDetails(\''+r.id+'\')">상세검토</button>';if(canApproveWorkflow()&&['검증완료','승인대기'].includes(r.status))h+=' <button class="btn primary" onclick="approveInsurance(\''+r.id+'\')">승인</button>';if(['승인완료','제출대기'].includes(r.status))h+=' <button class="btn secondary" disabled>보안연계 전 제출차단</button>';return h}
-function reviewInsuranceDetails(id){activeInsuranceRequestId=id;$('#insuranceDetailCard').hidden=false;renderInsuranceDetails();$('#insuranceDetailCard').scrollIntoView({behavior:'smooth',block:'start'})}
-function closeInsuranceDetails(){activeInsuranceRequestId=null;$('#insuranceDetailCard').hidden=true}
-function renderInsuranceDetails(){if(!activeInsuranceRequestId)return;const req=insuranceRequests.find(r=>r.id===activeInsuranceRequestId),emp=employees.find(e=>e.id===req?.employee_id),rows=insuranceDetails.filter(d=>d.insurance_request_id===activeInsuranceRequestId);$('#insuranceDetailTitle').textContent=(emp?.name||'-')+' · '+(req?.request_type||'-')+' · 승인 전 필수 검토';$('#insuranceDetailBody').innerHTML=rows.map(d=>{const reason=d.eligibility_evidence?.reason||'-',needs=d.eligibility_status==='확인필요',review=d.reviewed_by?'<span class="badge approved">확인완료</span>':(needs&&canApproveWorkflow()?'<button class="btn primary" onclick="acknowledgeInsuranceDetail(\''+d.id+'\')">검토확인</button>':needs?'<span class="badge review">승인권자 확인 필요</span>':'<span class="badge approved">자동판정</span>');return '<tr><td><b>'+esc(d.insurance_type)+'</b></td><td>'+esc(d.effective_date||'-')+'</td><td>'+money(d.remuneration_amount)+'원</td><td>'+esc(d.weekly_hours??'-')+'</td><td>'+badge(d.eligibility_status)+'</td><td>'+esc(reason)+'</td><td>'+review+'</td></tr>'}).join('')||'<tr><td colspan="7">상세 검토 항목이 없습니다. 먼저 검증을 다시 실행해 주세요.</td></tr>'}
-async function acknowledgeInsuranceDetail(id){const note=prompt('검토 근거 또는 메모를 입력해 주세요.','담당자 확인');if(note===null)return;const {error}=await sb.rpc('acknowledge_insurance_detail',{p_detail_id:id,p_note:note.trim()||'담당자 확인'});if(error)return alert('검토확인 실패: '+error.message);await loadInsuranceData();renderInsuranceDetails()}
-function prepareRequest(id){const e=employees.find(x=>x.id===id);if(!e)return;$('#reqEmployee').value=id;$('#reqType').value=e.termination_date?'상실':'취득';$('#reqDate').value=e.termination_date||e.hire_date||'';$('#reqSalary').value=e.monthly_remuneration||'';openInsurance()}
-function resetEmployeeForm(){editingEmployeeId=null;['#empName','#empNo','#empBirth','#empHire','#empTermination','#empSalary','#empHours'].forEach(s=>$(s).value='');$('#empType').value='정규직';$('#empStatus').value='재직';$('#saveEmployee').textContent='직원 저장';$('#cancelEmployeeEdit').hidden=true}
-function editEmployee(id){const e=employees.find(x=>x.id===id);if(!e)return;editingEmployeeId=id;$('#empName').value=e.name||'';$('#empNo').value=e.employee_no||'';$('#empBirth').value=e.birth_date||'';$('#empHire').value=e.hire_date||'';$('#empTermination').value=e.termination_date||'';$('#empSalary').value=e.monthly_remuneration??'';$('#empHours').value=e.weekly_hours??'';$('#empType').value=e.employment_type||'정규직';$('#empStatus').value=e.status||'재직';$('#saveEmployee').textContent='직원 수정 저장';$('#cancelEmployeeEdit').hidden=false;$('#empName').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});$('#empSalary').focus()}
-$('#cancelEmployeeEdit').onclick=resetEmployeeForm;
-$('#saveEmployee').onclick=async()=>{if(!cloudCompanyId)return alert('사업장을 먼저 저장해 주세요.');const name=$('#empName').value.trim();if(!name)return alert('직원명을 입력해 주세요.');const salary=$('#empSalary').value,weeklyHours=$('#empHours').value;if(salary!==''&&(!Number.isFinite(Number(salary))||Number(salary)<0))return alert('월 보수는 0 이상의 숫자로 입력해 주세요.');if(weeklyHours!==''&&(!Number.isFinite(Number(weeklyHours))||Number(weeklyHours)<0))return alert('주 소정근로시간은 0 이상의 숫자로 입력해 주세요.');const payload={name,employee_no:$('#empNo').value.trim()||null,birth_date:$('#empBirth').value||null,hire_date:$('#empHire').value||null,termination_date:$('#empTermination').value||null,monthly_remuneration:salary===''?null:Number(salary),weekly_hours:weeklyHours===''?null:Number(weeklyHours),employment_type:$('#empType').value,status:$('#empStatus').value,updated_at:new Date().toISOString()};let error;if(editingEmployeeId){({error}=await sb.from('employees').update(payload).eq('id',editingEmployeeId).eq('company_id',cloudCompanyId))}else{({error}=await sb.from('employees').insert({...payload,company_id:cloudCompanyId}))}if(error)return alert((editingEmployeeId?'직원 수정 실패: ':'직원 저장 실패: ')+error.message);const employeeId=editingEmployeeId,wasEditing=Boolean(employeeId);let revalidated=0;if(wasEditing){const related=insuranceRequests.filter(r=>r.employee_id===employeeId&&['요청접수','검증필요','보완요청','검증완료','승인대기'].includes(r.status));for(const req of related){const result=await sb.rpc('validate_insurance_request',{req_id:req.id});if(result.error)return alert('직원 정보는 저장되었지만 신고 재검증에 실패했습니다: '+result.error.message);revalidated++}}resetEmployeeForm();await loadInsuranceData();if(wasEditing)alert('직원 정보가 수정되었습니다.'+(revalidated?' 연결된 신고 '+revalidated+'건의 보험별 판정도 갱신했습니다.':''))};
-$('#createInsuranceRequest').onclick=async()=>{const employeeId=$('#reqEmployee').value,type=$('#reqType').value,date=$('#reqDate').value;if(!employeeId)return alert('직원을 선택해 주세요.');if(!date)return alert('적용일을 입력해 주세요.');const payload={company_id:cloudCompanyId,employee_id:employeeId,request_type:type,effective_date:date,national_pension:$('#reqNp').checked,health_insurance:$('#reqHi').checked,employment_insurance:$('#reqEi').checked,industrial_accident:$('#reqIa').checked,monthly_remuneration:$('#reqSalary').value?Number($('#reqSalary').value):null,loss_reason:$('#reqLossReason').value.trim()||null,status:'요청접수',requested_by:session.user.id},{data,error}=await sb.from('insurance_requests').insert(payload).select().single();if(error)return alert('신고 요청 실패: '+error.message);await validateInsurance(data.id)};async function validateInsurance(id){const {data,error}=await sb.rpc('validate_insurance_request',{req_id:id});if(error)return alert('검증 실패: '+error.message);await loadInsuranceData();if(data?.length)alert('보완이 필요합니다.\n- '+data.join('\n- '));else alert('기본 검증 통과 · 승인대기로 이동했습니다.')}async function approveInsurance(id){if(!canApproveWorkflow())return alert('4대보험 승인 권한이 없습니다.');const {error}=await sb.rpc('approve_insurance_request',{req_id:id});if(error){if(error.message.includes('insurance detail review acknowledgement required')){reviewInsuranceDetails(id);return alert('보험별 상세 검토에서 확인필요 항목을 모두 검토확인해 주세요.')}return alert('승인 실패: '+error.message)}await loadInsuranceData();alert('내부 승인이 완료되었습니다. 실제 기관 제출은 아직 차단되어 있습니다.')}
-async function loadAudit(){if(!orgId)return;const {data,error}=await sb.from('audit_logs').select('*').eq('organization_id',orgId).order('created_at',{ascending:false}).limit(300);if(!error)audit=(data||[]).map(a=>({time:new Date(a.created_at).toLocaleString('ko-KR'),action:a.action,target:a.target_type+(a.target_id?' · '+a.target_id:''),detail:JSON.stringify(a.detail||{})}))}function renderAudit(){$('#auditBody').innerHTML=audit.map(a=>'<tr><td>'+esc(a.time)+'</td><td>'+esc(a.action)+'</td><td>'+esc(a.target)+'</td><td>'+esc(a.detail||'')+'</td></tr>').join('')||'<tr><td colspan="4">기록이 없습니다.</td></tr>'}
-async function loadSubmissionGate(){try{const res=await fetch('/api/insurance-submission-gate',{cache:'no-store'}),gate=await res.json();const ready=gate.status==='SANDBOX_READY';$('#serverGateStatus').textContent=ready?'샌드박스 준비':'서버 차단';$('#serverGateStatus').className='badge '+(ready?'review':'need');$('#identityLinkStatus').textContent=gate.checks?.trusted_broker_configured?'브로커 설정':'미연동';$('#identityLinkStatus').className='badge '+(gate.checks?.trusted_broker_configured?'review':'need');$('#liveSubmissionStatus').textContent='차단 유지';$('#submissionGateMessage').textContent=gate.message||'제출 상태를 확인할 수 없습니다.';$('#secureSubmissionButton').textContent=ready?'샌드박스 시험 준비':'보안연계 완료 전 제출 불가';}catch(e){console.error(e);$('#serverGateStatus').textContent='확인 실패';$('#submissionGateMessage').textContent='서버 제출 게이트 확인에 실패했습니다. 제출은 계속 차단됩니다.';}}
-async function loadInsuranceData(){if(!session||!cloudCompanyId)return;const [er,rr,sr,ir,dr]=await Promise.all([sb.from('employees').select('*').eq('company_id',cloudCompanyId).order('created_at',{ascending:false}),sb.from('insurance_requests').select('*').eq('company_id',cloudCompanyId).order('requested_at',{ascending:false}),sb.from('insurance_submissions').select('*').order('created_at',{ascending:false}),sb.from('insurance_request_details').select('*').eq('company_id',cloudCompanyId).order('created_at',{ascending:true}),sb.from('insurance_delegations').select('*').eq('company_id',cloudCompanyId).order('created_at',{ascending:false}).limit(1)]);const e=er.error||rr.error||sr.error||ir.error||dr.error;if(e){console.error(e);$('#delegationBox').textContent='4대보험 데이터 오류: '+e.message;return}employees=er.data||[];insuranceRequests=rr.data||[];insuranceSubmissions=sr.data||[];insuranceDetails=ir.data||[];delegations=dr.data||[];await loadAudit();renderInsurance();if(activeInsuranceRequestId)renderInsuranceDetails();renderFiling();renderAudit();await loadSubmissionGate()}
-async function loadCloudData(){const {data:m,error:me}=await sb.from('organization_members').select('organization_id,role').eq('user_id',session.user.id).limit(1).maybeSingle();if(me)throw me;if(!m){const {data,error}=await sb.functions.invoke('onboard-owner',{body:{organization_name:'동행솔루션'}});if(error)throw error;orgId=data.organization_id;cloudRole=data.role}else{orgId=m.organization_id;cloudRole=m.role}const {data:companies,error:ce}=await sb.from('companies').select('*').eq('organization_id',orgId).eq('is_active',true).order('created_at',{ascending:true}).limit(1);if(ce)throw ce;if(companies?.[0]){const c=companies[0];cloudCompanyId=c.id;company={name:c.name,account:c.account_type,type:c.company_type};const {data:rows,error:te}=await sb.from('transactions').select('*').eq('company_id',cloudCompanyId).order('transaction_date',{ascending:false}).limit(1000);if(te)throw te;tx=(rows||[]).map(mapDbTx);await loadInsuranceData()}else{cloudCompanyId=null;tx=[];await loadAudit()}$('#cloudStatus').textContent='Cloud · '+cloudRole;render()}
-function download(text,name,type){const b=new Blob([text],{type}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),100)}$('#exportLog').onclick=()=>download(JSON.stringify(audit,null,2),'동행솔루션_감사로그.json','application/json');document.querySelectorAll('.nav').forEach(b=>b.onclick=async()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active');$('#title').textContent=b.textContent;if(b.dataset.view==='insurance')await loadInsuranceData();if(b.dataset.view==='audit'){await loadAudit();renderAudit()}});
-async function finishSignIn(){try{$('#authGate').classList.add('hidden');await loadCloudData()}catch(e){console.error(e);$('#cloudStatus').textContent='Cloud 오류';alert('클라우드 연결 오류: '+(e.message||e))}}
-function showPasswordRecovery(){$('#passwordLogin').hidden=true;$('#passwordRecovery').hidden=false;$('#authGate').classList.remove('hidden');$('#authStatus').textContent='새 비밀번호를 설정해 주세요.'}
-async function initAuth(){const {data:{session:sess}}=await sb.auth.getSession();session=sess;if(!session){$('#authGate').classList.remove('hidden');$('#cloudStatus').textContent='로그인 필요';return}await finishSignIn()}
-$('#signInPassword').onclick=async()=>{const email=$('#loginEmail').value.trim(),password=$('#loginPassword').value;if(!email)return alert('이메일 주소를 입력해 주세요.');if(password.length<8)return alert('비밀번호는 8자 이상 입력해 주세요.');$('#authStatus').textContent='로그인 중입니다.';const {error}=await sb.auth.signInWithPassword({email,password});$('#authStatus').textContent=error?'로그인 실패: 이메일 또는 비밀번호를 확인해 주세요.':''};
-$('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#signInPassword').click()});
-$('#resetPassword').onclick=async()=>{const email=$('#loginEmail').value.trim();if(!email)return alert('이메일 주소를 입력해 주세요.');$('#authStatus').textContent='비밀번호 설정 이메일을 보내는 중입니다.';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});$('#authStatus').textContent=error?'전송 실패: '+error.message:'메일이 도착하면 링크를 눌러 새 비밀번호를 설정해 주세요.'};
-$('#updatePassword').onclick=async()=>{const password=$('#newPassword').value,confirm=$('#confirmPassword').value;if(password.length<8)return alert('새 비밀번호는 8자 이상 입력해 주세요.');if(password!==confirm)return alert('새 비밀번호가 서로 일치하지 않습니다.');$('#authStatus').textContent='비밀번호를 저장하는 중입니다.';const {error}=await sb.auth.updateUser({password});if(error){$('#authStatus').textContent='저장 실패: '+error.message;return}$('#authStatus').textContent='비밀번호가 설정되었습니다.';$('#passwordRecovery').hidden=true;$('#passwordLogin').hidden=false;history.replaceState({},document.title,location.pathname);await finishSignIn()};
-$('#signOutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()};
-sb.auth.onAuthStateChange(async(event,newSession)=>{session=newSession;if(event==='PASSWORD_RECOVERY'){showPasswordRecovery();return}if(event==='SIGNED_IN'&&session&&!location.hash.includes('type=recovery'))await finishSignIn();if(event==='SIGNED_OUT')$('#authGate').classList.remove('hidden')});
-render();initAuth();
-</script></body></html>
+<a class="skip" href="#main">본문 바로가기</a>
+<div class="topline">
+<div class="wrap">복지 현장의 든든한 동행<span>
+<a href="tel:0426733338">042-673-3338</a>
+</span>
+</div>
+</div>
+<header>
+<div class="wrap header-inner">
+<a class="brand" href="/" aria-label="동행솔루션 홈">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<button class="menu-toggle" aria-expanded="false" aria-controls="navigation" aria-label="메뉴 열기">☰</button>
+<nav id="navigation" aria-label="주 메뉴">
+<a href="/#services">서비스 소개</a>
+<a href="/support">고객지원</a>
+<a href="/contact">상담문의</a>
+<a href="/app">로그인 <span aria-hidden="true">↗</span>
+</a>
+<a class="button navy small" href="/app?view=insurance">업무요청</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<section class="hero">
+<div class="wrap hero-grid">
+<div>
+<span class="eyebrow">YOUR PARTNER IN CARE</span>
+<h1>복지기관의 업무를<br>
+<em>하나로 연결합니다.</em>
+</h1>
+<p>회계·세무부터 평가·컨설팅, 교육과 사무자동화까지.<br>기관의 더 나은 운영을 동행솔루션이 함께합니다.</p>
+<div class="actions">
+<a class="button orange" href="/contact">상담 신청하기 <span aria-hidden="true">↗</span>
+</a>
+<a class="text-link" href="#services">서비스 둘러보기 ↓</a>
+</div>
+</div>
+<div class="hero-photo">
+<img src="/assets/hero.jpg" alt="밝은 유리 오피스의 서비스 소개용 이미지" width="1536" height="1024" fetchpriority="high">
+<span>함께 만드는 더 나은 내일</span>
+</div>
+</div>
+<div class="hero-bottom wrap">
+<span>기관 운영의 오늘부터, 내일의 성장까지.</span>
+<span>동행솔루션이 함께합니다.</span>
+</div>
+</section>
+<section class="section wrap" id="services">
+<div class="section-heading">
+<div>
+<span class="eyebrow">OUR SERVICES</span>
+<h2>현장에 필요한 모든 연결.</h2>
+</div>
+<p>기관의 일상부터 새로운 가능성까지,<br>필요한 서비스를 만나보세요.</p>
+</div>
+<div class="service-grid">
+<a class="service-card photo-card" href="/services/accounting">
+<img class="service-photo" src="/assets/accounting.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">▤</span>
+<span class="number">01</span>
+</div>
+<h3>회계·세무</h3>
+<p>회계자료 정리부터 급여와 세무 업무 준비까지, 기관의 일상에 맞춰 함께 점검합니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+<a class="service-card photo-card" href="/services/consulting">
+<img class="service-photo" src="/assets/consulting.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">◎</span>
+<span class="number">02</span>
+</div>
+<h3>평가·컨설팅</h3>
+<p>기관의 현황을 살피고 필요한 준비를 구체적인 실행 순서로 정리합니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+<a class="service-card photo-card" href="/services/automation">
+<img class="service-photo" src="/assets/automation.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">⌘</span>
+<span class="number">03</span>
+</div>
+<h3>사무자동화</h3>
+<p>자주 반복하는 자료 정리와 확인 업무를 기관에 맞는 간단한 흐름으로 바꿉니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+<a class="service-card photo-card" href="/services/education">
+<img class="service-photo" src="/assets/education.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">▥</span>
+<span class="number">04</span>
+</div>
+<h3>복지에듀</h3>
+<p>복지 현장의 역할과 상황에 맞는 교육 방향을 안내합니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+<a class="service-card photo-card" href="/services/cognitive">
+<img class="service-photo" src="/assets/cognitive.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">◈</span>
+<span class="number">05</span>
+</div>
+<h3>인지프로그램</h3>
+<p>어르신의 특성과 기관의 환경을 고려한 인지활동 운영을 함께 고민합니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+<a class="service-card photo-card" href="/services/community">
+<img class="service-photo" src="/assets/community.jpg" alt="" width="1536" height="1024" loading="lazy">
+<div class="card-body">
+<div class="card-top">
+<span class="icon" aria-hidden="true">↗</span>
+<span class="number">06</span>
+</div>
+<h3>복지커뮤니티</h3>
+<p>복지기관 운영에 필요한 정보와 현장의 이야기를 연결합니다.</p>
+<span class="card-link">자세히 보기 <span aria-hidden="true">↗</span>
+</span>
+</div>
+</a>
+</div>
+</section>
+<section class="support-strip">
+<div class="wrap">
+<div>
+<span class="eyebrow">CUSTOMER SUPPORT</span>
+<h2>상담부터 업무 확인까지, 간편하게.</h2>
+</div>
+<div class="support-links">
+<a href="/contact">상담신청 <span>↗</span>
+</a>
+<a href="/app?view=insurance">업무요청 <span>↗</span>
+</a>
+<a href="/app">내 업무현황 <span>↗</span>
+</a>
+<a href="/services/education">교육 문의 <span>↗</span>
+</a>
+<a href="/services/consulting">평가 준비 <span>↗</span>
+</a>
+<a href="/support">자료 안내 <span>↗</span>
+</a>
+</div>
+</div>
+</section>
+<section class="cta">
+<div class="wrap">
+<div>
+<span class="eyebrow">LET’S WALK TOGETHER</span>
+<h2>어떤 도움이 필요하신가요?</h2>
+<p>작은 질문부터 시작해도 괜찮습니다.</p>
+</div>
+<a class="button orange" href="/contact">우리 기관 상담하기 <span aria-hidden="true">↗</span>
+</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap footer-grid">
+<div>
+<a class="brand" href="/">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<p>복지 현장에 필요한 전문성,<br>가장 가까운 곳에서 함께합니다.</p>
+</div>
+<div>
+<strong>CONTACT</strong>
+<p>
+<a href="tel:0426733338">042-673-3338</a>
+<br>
+<a href="mailto:donghangsol@naver.com">donghangsol@naver.com</a>
+<br>대전광역시 서구 월평로 27 201호<br>
+<a href="https://donghangsolution.co.kr">donghangsolution.co.kr</a>
+</p>
+</div>
+<div>
+<strong>QUICK LINKS</strong>
+<p>
+<a href="/support">고객지원</a>
+<br>
+<a href="/contact">상담신청</a>
+<br>
+<a href="/app">내 업무현황 · 로그인</a>
+</p>
+</div>
+</div>
+<div class="wrap copyright">© 2026 동행솔루션. All rights reserved. <span class="image-note">사진은 서비스 이해를 돕기 위한 이미지입니다.</span>
+</div>
+</footer>
+</body>
+</html>
