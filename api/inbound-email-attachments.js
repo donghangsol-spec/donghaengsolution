@@ -23,7 +23,7 @@ export async function ingestAttachment({organizationId,messageId,url,filename,mi
  await sb(`/storage/v1/object/email-intake-private/${path}`,{method:"POST",headers:{"Content-Type":actualType,"x-upsert":"false"},body:bytes});
  try{
   const rows=await sb("/rest/v1/email_intake_attachments",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({message_id:messageId,organization_id:organizationId,original_filename:safe,mime_type:actualType,byte_size:bytes.length,sha256:sha,storage_path:path,processing_status:"received"})});
-  return {duplicate:false,id:rows?.[0]?.id,sha256:sha};
+  const id=rows?.[0]?.id;\n  if(id)await sb("/rest/v1/rpc/create_intake_classification_draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p_attachment_id:id,p_organization_id:organizationId,p_filename:safe,p_mime_type:actualType})});\n  return {duplicate:false,id,sha256:sha};
  }catch(e){
   await sb(`/storage/v1/object/email-intake-private/${path}`,{method:"DELETE"});
   throw e;
