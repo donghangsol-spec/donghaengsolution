@@ -1,14 +1,24 @@
 import crypto from "node:crypto";
-export const config = { api: { bodyParser: false } };
-async function rawBody(req){const chunks=[];for await(const chunk of req)chunks.push(Buffer.from(chunk));return Buffer.concat(chunks);}
-function safeEqual(a,b){const aa=Buffer.from(a||"");const bb=Buffer.from(b||"");return aa.length===bb.length&&crypto.timingSafeEqual(aa,bb);}
-function verify(raw,h,secret){const id=h["svix-id"],ts=h["svix-timestamp"],sig=h["svix-signature"];if(!id||!ts||!sig||!secret)return false;if(Math.abs(Date.now()/1000-Number(ts))>300)return false;const key=Buffer.from(secret.replace(/^whsec_/,""),"base64");const expected=crypto.createHmac("sha256",key).update(`${id}.${ts}.${raw.toString("utf8")}`).digest("base64");return sig.split(" ").some(p=>p.startsWith("v1,")&&safeEqual(p.slice(3),expected));}
+export const config={api:{bodyParser:false}};
+async function rawBody(req){const c=[];for await(const x of req)c.push(Buffer.from(x));return Buffer.concat(c);}
+function eq(a,b){const x=Buffer.from(a||""),y=Buffer.from(b||"");return x.length===y.length&&crypto.timingSafeEqual(x,y);}
+function verify(raw,h,secret){const id=h["svix-id"],ts=h["svix-timestamp"],sig=h["svix-signature"];if(!id||!ts||!sig||!secret)return false;if(Math.abs(Date.now()/1000-Number(ts))>300)return false;const key=Buffer.from(secret.replace(/^whsec_/,""),"base64");const expected=crypto.createHmac("sha256",key).update(`${id}.${ts}.${raw.toString("utf8")}`).digest("base64");return sig.split(" ").some(p=>p.startsWith("v1,")&&eq(p.slice(3),expected));}
+async function sb(path,opts={}){const base=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!base||!key)throw new Error("server config missing");const r=await fetch(base+path,{...opts,headers:{apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json",...(opts.headers||{})}});if(!r.ok)throw new Error("database request failed");return r.status===204?null:r.json();}
+function address(x){const m=String(x||"").toLowerCase().match(/<?([a-z0-9._+-]+)@([a-z0-9.-]+)>?$/);return m?{local:m[1],domain:m[2]}:null;}
 export default async function handler(req,res){
  if(req.method!=="POST")return res.status(405).json({ok:false});
  const raw=await rawBody(req);
  if(!verify(raw,req.headers,process.env.RESEND_WEBHOOK_SECRET))return res.status(401).json({ok:false});
- let event;try{event=JSON.parse(raw.toString("utf8"));}catch{return res.status(400).json({ok:false});}
- if(event?.type!=="email.received")return res.status(200).json({ok:true,ignored:true});
- // Fail closed: do not fetch body/attachments until recipient-to-organization routing is explicit.
+ let e;try{e=JSON.parse(raw.toString("utf8"));}catch{return res.status(400).json({ok:false});}
+ if(e?.type!=="email.received")return res.status(200).json({ok:true,ignored:true});
+ const d=e.data||{}, tos=Array.isArray(d.to)?d.to:[d.to].filter(Boolean);
+ let route=null;
+ for(const t of tos){const a=address(t);if(!a)continue;const q=`?select=organization_id&local_part=eq.${encodeURIComponent(a.local)}&domain=eq.${encodeURIComponent(a.domain)}&is_active=eq.true&limit=1`;const rows=await sb("/rest/v1/inbound_email_routes"+q);if(rows?.[0]){route=rows[0];break;}}
+ // Unknown recipients are acknowledged but never ingested, preventing retry storms and cross-org leakage.
+ if(!route)return res.status(200).json({ok:true,ignored:true,reason:"unrouted"});
+ const providerId=String(d.email_id||d.id||e.id||"").slice(0,255);if(!providerId)return res.status(200).json({ok:true,ignored:true,reason:"missing-provider-id"});
+ const body={organization_id:route.organization_id,provider:"resend",provider_message_id:providerId,from_address:String(d.from||"").slice(0,320),to_addresses:tos,subject:String(d.subject||"").slice(0,500),status:"received"};
+ try{await sb("/rest/v1/email_intake_messages",{method:"POST",headers:{Prefer:"return=minimal,resolution=ignore-duplicates"},body:JSON.stringify(body)});}
+ catch{return res.status(503).json({ok:false});}
  return res.status(202).json({ok:true,accepted:true,processing:false});
 }
