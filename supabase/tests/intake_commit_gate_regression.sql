@@ -9,19 +9,27 @@
 -- call server commit for review_required draft.
 -- PASS: 'human approval required'; no payroll_period/payroll_entry/insurance_request created.
 --
--- 3. CROSS-ORG COMMIT DENIED
+-- 3. STAFF COMMIT DENIED
+-- set JWT to staff_a; call authorize_intake_work_commit(draft_a) after owner/reviewer approval.
+-- PASS: forbidden/false and commit API returns 403; committed_by remains null.
+--
+-- 4. AUTHORIZED ACTOR COMMIT
+-- set JWT to owner_a or reviewer_a; authorize_intake_work_commit(draft_a).
+-- PASS: true; server commit receives that exact auth.uid() as p_actor_id and committed_by records it.
+--
+-- 5. CROSS-ORG COMMIT DENIED
 -- owner_b JWT GET intake_work_drafts?id=eq.draft_a.
 -- PASS: zero rows via RLS, therefore API never invokes privileged commit.
 --
--- 4. IDEMPOTENT COMMIT
--- owner/reviewer approves draft_a, server commits twice.
+-- 6. IDEMPOTENT COMMIT
+-- owner/reviewer approves draft_a, server commits twice with the same authorized actor id.
 -- PASS: second call returns same committed_entity_id; production entity count remains one.
 --
--- 5. RELATIONSHIP TAMPER DENIED
+-- 7. RELATIONSHIP TAMPER DENIED
 -- synthetic service fixture makes work draft company/employee relationship disagree with organization.
 -- PASS: commit raises 'organization relationship mismatch'.
 --
--- 6. NO EXTERNAL FILING
+-- 8. NO EXTERNAL FILING
 -- PASS: insurance result status is 요청접수 only; no insurance_submissions row/worker queue is created.
 --
 -- Mandatory evidence before PR Ready:
