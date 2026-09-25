@@ -17,8 +17,7 @@ export default async function handler(req,res){
  // Unknown recipients are acknowledged but never ingested, preventing retry storms and cross-org leakage.
  if(!route)return res.status(200).json({ok:true,ignored:true,reason:"unrouted"});
  const providerId=String(d.email_id||d.id||e.id||"").slice(0,255);if(!providerId)return res.status(200).json({ok:true,ignored:true,reason:"missing-provider-id"});
- const body={organization_id:route.organization_id,provider:"resend",provider_message_id:providerId,sender:String(d.from||"").slice(0,320),subject:String(d.subject||"").slice(0,500),received_at:d.created_at||new Date().toISOString(),processing_status:"received"};
- try{await sb("/rest/v1/email_intake_messages",{method:"POST",headers:{Prefer:"return=minimal,resolution=ignore-duplicates"},body:JSON.stringify(body)});}
- catch{return res.status(503).json({ok:false});}
+ const rpcBody={p_organization_id:route.organization_id,p_provider:"resend",p_provider_message_id:providerId,p_sender:String(d.from||"").slice(0,320),p_subject:String(d.subject||"").slice(0,500),p_received_at:d.created_at||new Date().toISOString()};
+ try{await sb("/rest/v1/rpc/ingest_inbound_email_metadata",{method:"POST",body:JSON.stringify(rpcBody)});}catch{return res.status(503).json({ok:false});}
  return res.status(202).json({ok:true,accepted:true,processing:false});
 }
