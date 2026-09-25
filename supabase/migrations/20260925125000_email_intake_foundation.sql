@@ -180,3 +180,30 @@ using (
   and (storage.foldername(name))[1] is not null
   and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
 );
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
