@@ -160,7 +160,300 @@ create policy "email intake storage read" on storage.objects
 for select to authenticated
 using (
   bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+);
+
+create policy "email intake storage insert" on storage.objects
+for insert to authenticated
+with check (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.is_org_member(((storage.foldername(name))[1])::uuid)
+);
+
+create policy "email intake storage insert" on storage.objects
+for insert to authenticated
+with check (
+  bucket_id='email-intake-private'
   and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin','reviewer','staff'])
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin','reviewer','staff'])
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.is_org_member(((storage.foldername(name))[1])::uuid)
+);
+
+create policy "email intake storage insert" on storage.objects
+for insert to authenticated
+with check (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin','reviewer','staff'])
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.is_org_member(((storage.foldername(name))[1])::uuid)
+);
+
+create policy "email intake storage insert" on storage.objects
+for insert to authenticated
+with check (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin','reviewer','staff'])
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin','reviewer','staff'])
+  and lower(storage.extension(name)) in ('pdf','png','jpg','jpeg','xls','xlsx','csv')
+);
+
+create policy "email intake storage delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id='email-intake-private'
+  and (storage.foldername(name))[1] is not null
+  and private.has_org_role(((storage.foldername(name))[1])::uuid,array['owner','admin'])
+);
+
+
+-- Provision the intake bucket as private. This is idempotent and does not make existing
+-- objects public. Per-bucket limits are defense in depth; application-side validation
+-- remains required before extraction.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values (
+  'email-intake-private',
+  'email-intake-private',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv'
+  ]
+)
+on conflict (id) do update
+set public=false,
+    file_size_limit=excluded.file_size_limit,
+    allowed_mime_types=excluded.allowed_mime_types;
+
+-- Explicitly deny browser-side object mutation beyond INSERT/owner-admin DELETE.
+-- No UPDATE policy is created: attachment replacement/upsert is intentionally blocked.
+
   and private.is_org_member(((storage.foldername(name))[1])::uuid)
 );
 
