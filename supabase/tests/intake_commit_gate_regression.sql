@@ -1,0 +1,28 @@
+-- Run with synthetic authenticated JWT sessions in Preview; never customer data.
+-- Fixtures: org_a/org_b, owner_a, reviewer_a, staff_a, owner_b, approved/unapproved intake_work_drafts.
+--
+-- 1. STAFF APPROVAL DENIED
+-- set JWT to staff_a; select review_intake_work_draft(draft_a,'approved');
+-- PASS: exception/not authorized; status remains review_required.
+--
+-- 2. UNAPPROVED COMMIT DENIED
+-- call server commit for review_required draft.
+-- PASS: 'human approval required'; no payroll_period/payroll_entry/insurance_request created.
+--
+-- 3. CROSS-ORG COMMIT DENIED
+-- owner_b JWT GET intake_work_drafts?id=eq.draft_a.
+-- PASS: zero rows via RLS, therefore API never invokes privileged commit.
+--
+-- 4. IDEMPOTENT COMMIT
+-- owner/reviewer approves draft_a, server commits twice.
+-- PASS: second call returns same committed_entity_id; production entity count remains one.
+--
+-- 5. RELATIONSHIP TAMPER DENIED
+-- synthetic service fixture makes work draft company/employee relationship disagree with organization.
+-- PASS: commit raises 'organization relationship mismatch'.
+--
+-- 6. NO EXTERNAL FILING
+-- PASS: insurance result status is 요청접수 only; no insurance_submissions row/worker queue is created.
+--
+-- Mandatory evidence before PR Ready:
+-- screenshots/log IDs for each authenticated role, DB counts before/after, and Security Advisor result.
