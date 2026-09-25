@@ -1,5 +1,5 @@
 create or replace function private.intake_payload_has_sensitive_key(p_value jsonb)
-returns boolean language plpgsql immutable security invoker set search_path=pg_catalog as $
+returns boolean language plpgsql immutable security invoker set search_path=pg_catalog as $fn$
 declare k text; v jsonb;
 begin
  if jsonb_typeof(p_value)='object' then
@@ -13,7 +13,7 @@ begin
   end loop;
  end if;
  return false;
-end $;
+end $fn$;
 revoke all on function private.intake_payload_has_sensitive_key(jsonb) from public,anon,authenticated;
 
 create or replace function public.set_intake_extraction_payload(p_draft_id uuid,p_organization_id uuid,p_payload jsonb,p_confidence jsonb,p_errors jsonb default '[]'::jsonb,p_warnings jsonb default '[]'::jsonb)
