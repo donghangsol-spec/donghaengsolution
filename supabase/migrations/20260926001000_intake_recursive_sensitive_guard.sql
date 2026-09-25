@@ -1,18 +1,19 @@
 create or replace function private.intake_payload_has_sensitive_key(p_value jsonb)
-returns boolean language sql immutable security invoker set search_path=pg_catalog as $$
- with recursive walk(v) as (
-   select coalesce(p_value,'null'::jsonb)
-   union all
-   select x.value from walk w cross join lateral jsonb_each(w.v) x where jsonb_typeof(w.v)='object'
-   union all
-   select x.value from walk w cross join lateral jsonb_array_elements(w.v) x where jsonb_typeof(w.v)='array'
- )
- select exists(
-   select 1 from walk w cross join lateral jsonb_object_keys(w.v) k
-   where jsonb_typeof(w.v)='object'
-   and lower(k) in ('resident_registration_number','rrn','certificate_password','private_key','password','certificate_private_key')
- );
-$$;
+returns boolean language plpgsql immutable security invoker set search_path=pg_catalog as $
+declare k text; v jsonb;
+begin
+ if jsonb_typeof(p_value)='object' then
+  for k,v in select key,value from jsonb_each(p_value) loop
+   if lower(k) in ('resident_registration_number','rrn','certificate_password','private_key','password','certificate_private_key') then return true; end if;
+   if private.intake_payload_has_sensitive_key(v) then return true; end if;
+  end loop;
+ elsif jsonb_typeof(p_value)='array' then
+  for v in select value from jsonb_array_elements(p_value) loop
+   if private.intake_payload_has_sensitive_key(v) then return true; end if;
+  end loop;
+ end if;
+ return false;
+end $;
 revoke all on function private.intake_payload_has_sensitive_key(jsonb) from public,anon,authenticated;
 
 create or replace function public.set_intake_extraction_payload(p_draft_id uuid,p_organization_id uuid,p_payload jsonb,p_confidence jsonb,p_errors jsonb default '[]'::jsonb,p_warnings jsonb default '[]'::jsonb)
