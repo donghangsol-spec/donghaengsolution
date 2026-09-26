@@ -1,0 +1,29 @@
+-- Authenticated regression plan for SECURITY DEFINER RPCs.
+-- Run only with synthetic organizations/users. Never use customer data.
+-- Required fixtures: org_a, org_b; owner_a, reviewer_a, staff_a, owner_b;
+-- company_a/company_b and synthetic employee/payroll/insurance rows.
+--
+-- PASS criteria:
+-- 1) cross-org SELECT/UPDATE/RPC attempts fail or return no rows.
+-- 2) role matrix below remains unchanged.
+-- 3) approval/confirmation state transitions and validation outputs remain identical before/after privilege changes.
+--
+-- Expected matrix:
+-- RPC                              owner reviewer staff other-org
+-- acknowledge_insurance_detail      Y      Y       N      N
+-- approve_insurance_request         Y      Y       N      N
+-- confirm_payroll_period            Y      Y       N      N
+-- generate_payroll_draft            Y      Y       Y      N
+-- revise_insurance_request          Y      Y       Y      N
+-- validate_insurance_request        Y      Y       Y*     N
+-- validate_payroll_period           Y      Y       Y      N
+-- * validate_insurance_request uses organization membership internally; verify intended staff behavior explicitly.
+--
+-- Assertions to execute with real JWT sessions in Preview:
+-- A. owner_a can read/write only org_a rows and can approve/confirm valid synthetic drafts.
+-- B. reviewer_a can perform review/approval paths but cannot owner-only destructive operations.
+-- C. staff_a can create/generate/revise/validate permitted drafts but cannot approve/confirm.
+-- D. every org_a identity using org_b UUIDs is denied.
+-- E. confirmed payroll and approved insurance remain locked against prohibited direct edits.
+--
+-- This file intentionally contains no service-role impersonation: RLS must be tested with real authenticated JWTs.
