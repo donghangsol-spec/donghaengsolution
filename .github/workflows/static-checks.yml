@@ -20,3 +20,4 @@ jobs:
       - run: node tests/company-switch.test.mjs
       - run: node tests/accounting-company.test.mjs
       - run: node tests/sandbox-gate.test.mjs
+      - run: node tests/contact-intake-gate.test.mjs

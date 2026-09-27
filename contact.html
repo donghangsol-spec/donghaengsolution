@@ -53,7 +53,8 @@
 <div class="note">업무요청과 진행상황 확인은<br>
 <a href="/app">로그인 후 업무시스템</a>을 이용해 주세요.</div>
 </div>
-<form id="contactForm" class="contact-form">
+<div id="contactIntakeNotice" class="note" role="status">온라인 상담 접수를 준비 중입니다. 상담은 <a href="tel:0426733338">042-673-3338</a>로 문의해 주세요.</div>
+<form id="contactForm" class="contact-form" hidden>
 <h2>상담 내용 남기기</h2>
 <p class="muted">* 표시는 필수 항목입니다.</p>
 <label for="name">성함·기관명 *</label>
@@ -84,6 +85,15 @@
 <noscript>온라인 접수에는 자바스크립트가 필요합니다. 전화로 문의해 주세요.</noscript>
 </form>
 <script>
+// Intake remains unavailable unless the server explicitly enables it.
+fetch('/api/contact', { cache: 'no-store' })
+  .then(function (response) { return response.ok ? response.json() : { enabled: false }; })
+  .then(function (state) {
+    if (state.enabled !== true) return;
+    document.getElementById('contactForm').hidden = false;
+    document.getElementById('contactIntakeNotice').hidden = true;
+  })
+  .catch(function () {});
 // 복지에듀에서 넘어온 수강 신청: 문의 내용에 신청 양식을 미리 채워 둠
 (function () {
   var q = new URLSearchParams(location.search);
