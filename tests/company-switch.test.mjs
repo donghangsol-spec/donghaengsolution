@@ -8,11 +8,13 @@ const end = html.indexOf('\nfunction renderAll()', start);
 assert(start !== -1 && end !== -1, 'loadAll must be present');
 
 const pending = new Map();
-const view = { href: '', rows: null, alerts: [] };
+const view = { payrollHref: '', accountingHref: '', rows: null, alerts: [] };
+const payrollLink = { set href(value) { view.payrollHref = value; } };
+const accountingLink = { set href(value) { view.accountingHref = value; } };
 const context = {
   companyId: 'A', loadGeneration: 0, employees: [], requests: [], details: [], payrolls: [],
   encodeURIComponent, Promise,
-  $: () => view,
+  $: selector => selector === '#payrollDetailLink' ? payrollLink : accountingLink,
   renderAll: () => { view.rows = context.employees.map(row => row.name); },
   alert: message => view.alerts.push(message),
   sb: { from(table) {
@@ -44,7 +46,8 @@ await Promise.resolve();
 finish('B');
 await second;
 assert.deepEqual(view.rows, ['B']);
-assert.equal(view.href, './payroll.html?company=B');
+assert.equal(view.payrollHref, './payroll.html?company=B');
+assert.equal(view.accountingHref, './accounting.html?company=B');
 finish('A');
 await first;
 assert.deepEqual(view.rows, ['B'], 'late responses must not render the previous company');
@@ -52,6 +55,7 @@ assert.deepEqual(view.rows, ['B'], 'late responses must not render the previous 
 context.companyId = null;
 await context.loadAll();
 assert.deepEqual(Array.from(view.rows), []);
-assert.equal(view.href, './payroll.html');
+assert.equal(view.payrollHref, './payroll.html');
+assert.equal(view.accountingHref, './accounting.html');
 assert.deepEqual(view.alerts, []);
 console.log('Company switch rejects stale results and clears empty selection.');
