@@ -1,0 +1,12 @@
+{
+  "name": "donghaeng-certificate-session-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test credential-session.test.mjs macro-runner.test.mjs interactive-runner.test.mjs signed-receipt.test.mjs server-gate-client.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
