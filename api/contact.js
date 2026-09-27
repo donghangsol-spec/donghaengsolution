@@ -2,7 +2,11 @@ const clean = (value, max) => String(value || "").trim().slice(0, max);
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  const enabled = process.env.CONTACT_INTAKE_ENABLED === "true";
+  if (req.method === "GET") return res.status(200).json({ enabled });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
+  // Do not inspect or forward personal information while retention/deletion operations are unapproved.
+  if (!enabled) return res.status(503).json({ error: "contact_intake_disabled" });
 
   const name = clean(req.body?.name, 80);
   const phone = clean(req.body?.phone, 30);
