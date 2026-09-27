@@ -18,6 +18,6 @@ Audit-log writes should be performed by trusted server/edge code, not arbitrary 
 3. Private Storage bucket for evidence files.
 4. Vercel environment variables configured.
 5. Server-side audit write function deployed.
-6. Backup/restore procedure tested.
-7. Privacy/retention policy documented.
+6. Backup/restore procedure tested, including DB and Storage objects.
+7. Privacy/retention policy reviewed and approved for each data category; see [operating draft](PRIVACY_RETENTION_RECOVERY.md). Documentation alone does not complete this gate.
 8. No real bank credentials or certificate passwords stored.
