@@ -83,6 +83,16 @@
 </div>
 <noscript>온라인 접수에는 자바스크립트가 필요합니다. 전화로 문의해 주세요.</noscript>
 </form>
+<script>
+// 복지에듀에서 넘어온 수강 신청: 문의 내용에 신청 양식을 미리 채워 둠
+(function () {
+  var q = new URLSearchParams(location.search);
+  var box = document.getElementById("message");
+  if (!box || q.get("topic") !== "복지에듀" || box.value.trim()) return;
+  var course = (q.get("course") || "").slice(0, 80);
+  box.value = "[복지에듀 수강 신청]\n희망 과정: " + course + "\n복지에듀 가입 이메일: \n수강 인원: 1명\n";
+})();
+</script>
 </section>
 </main>
 <footer>
