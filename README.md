@@ -81,7 +81,7 @@
 - 다중 사업장 UI와 두 조직 간 교차접근 회귀 테스트
 - 건강·고용·산재보험 적용제외 규칙의 공식 검증
 - 원천세 간이세액표와 산재보험 사업종류별 요율 데이터
-- 개인정보 보유·삭제, 백업·복구 및 장애 대응 정책
+- 개인정보 보유·삭제, 백업·복구 및 장애 대응 [운영 초안](docs/PRIVACY_RETENTION_RECOVERY.md)의 승인·구현·실습
 - trusted worker 기반 신고의 샌드박스 E2E
 
 세부 잔여 항목은 [Issue #2](https://github.com/donghangsol-spec/donghaengsolution/issues/2)에서 관리합니다.
