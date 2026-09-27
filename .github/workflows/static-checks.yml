@@ -18,3 +18,4 @@ jobs:
           node-version: '22'
       - run: node scripts/check-static.mjs
       - run: node tests/company-switch.test.mjs
+      - run: node tests/accounting-company.test.mjs
