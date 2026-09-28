@@ -125,3 +125,15 @@ Attachment parsing, employee/company matching, row-by-row preview, selective
 commit and audit trail remain separate gates. Do not claim imported email
 amounts or acquisition/loss requests are in the business tables until these
 gates pass with synthetic fixtures and an authorized review.
+
+## Manual collection
+
+The accounting review tab has a separate `지금 수집` button. An authenticated
+owner, admin, or reviewer can use it to inspect up to 20 messages from the
+first page of the configured Resend receiving inbox. It uses the same sender,
+recipient, authentication and duplicate checks as the webhook and writes only
+review metadata. The count of review candidates includes already seen mail;
+it is not a count of newly imported transactions. `목록 새로고침` only reloads
+existing review rows. Both automatic and manual collection stay disabled until
+the production gate and required server environment are configured. This
+button cannot directly access the Naver mailbox or older Resend pages.

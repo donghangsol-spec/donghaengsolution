@@ -48,18 +48,63 @@ const address = value => String(value || "").match(/<([^<>]+)>/)?.[1]?.toLowerCa
   String(value || "").trim().toLowerCase();
 const configuredList = value => String(value || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
 
+export function intakeSettings(env = process.env) {
+  return {
+    resendKey: env.RESEND_API_KEY, dbUrl: env.SUPABASE_URL, dbKey: env.SUPABASE_SERVICE_ROLE_KEY,
+    orgId: env.EMAIL_INTAKE_ORGANIZATION_ID,
+    senders: configuredList(env.EMAIL_INTAKE_ALLOWED_SENDERS),
+    recipients: configuredList(env.EMAIL_INTAKE_RECIPIENTS),
+  };
+}
+
+export function intakeConfigured(settings) {
+  return !!(settings.resendKey && settings.dbUrl && settings.dbKey && settings.orgId &&
+    settings.senders.length && settings.recipients.length);
+}
+
+export async function processReceivedEmail(id, settings) {
+  if (typeof id !== "string" || !EMAIL_ID.test(id)) throw new Error("invalid_email_id");
+  const { resendKey, dbUrl, dbKey, orgId, senders, recipients } = settings;
+  const mailResponse = await fetch("https://api.resend.com/emails/receiving/" + encodeURIComponent(id), {
+    headers: { Authorization: "Bearer " + resendKey },
+  });
+  if (!mailResponse.ok) throw new Error("mail_fetch_failed");
+  const mail = await mailResponse.json();
+  if (mail.id !== id) throw new Error("mail_id_mismatch");
+  const sender = address(mail.from);
+  const to = (Array.isArray(mail.to) ? mail.to : []).map(address);
+  const authenticated = ["dkim", "dmarc"].some(k => mail.authentication?.[k] === "pass");
+  // Forwarded mail may preserve DKIM. Never accept a spoofable From header alone.
+  if (!authenticated || !EMAIL.test(sender) || !senders.includes(sender) || !to.some(x => recipients.includes(x))) {
+    return "ignored";
+  }
+  const category = classifyEmail(mail.subject, mail.text);
+  const dbResponse = await fetch(dbUrl.replace(/\/$/, "") + "/rest/v1/email_intake_messages?on_conflict=provider,provider_message_id", {
+    method: "POST",
+    headers: {
+      apikey: dbKey, Authorization: "Bearer " + dbKey,
+      "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      organization_id: orgId, provider: "resend", provider_message_id: id,
+      sender, subject: String(mail.subject || "").slice(0, 300),
+      received_at: mail.created_at || new Date().toISOString(),
+      processing_status: "review_required", classification: category,
+    }),
+  });
+  if (!dbResponse.ok) throw new Error("intake_save_failed");
+  return "review_required";
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "GET") return res.status(200).json({ enabled: process.env.EMAIL_INTAKE_ENABLED === "true" });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
   // Production ingestion is opt-in only after retention, role and mailbox checks.
   if (process.env.EMAIL_INTAKE_ENABLED !== "true") return res.status(503).json({ error: "intake_disabled" });
-  const { RESEND_WEBHOOK_SECRET: secret, RESEND_API_KEY: resendKey,
-    SUPABASE_URL: dbUrl, SUPABASE_SERVICE_ROLE_KEY: dbKey,
-    EMAIL_INTAKE_ORGANIZATION_ID: orgId } = process.env;
-  const senders = configuredList(process.env.EMAIL_INTAKE_ALLOWED_SENDERS);
-  const recipients = configuredList(process.env.EMAIL_INTAKE_RECIPIENTS);
-  if (!secret || !resendKey || !dbUrl || !dbKey || !orgId || !senders.length || !recipients.length) {
+  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  const settings = intakeSettings();
+  if (!secret || !intakeConfigured(settings)) {
     return res.status(503).json({ error: "intake_not_configured" });
   }
   let raw;
@@ -71,36 +116,8 @@ export default async function handler(req, res) {
   const id = event.data?.email_id;
   if (typeof id !== "string" || !EMAIL_ID.test(id)) return res.status(400).json({ error: "invalid_email_id" });
   try {
-    const mailResponse = await fetch("https://api.resend.com/emails/receiving/" + encodeURIComponent(id), {
-      headers: { Authorization: "Bearer " + resendKey },
-    });
-    if (!mailResponse.ok) throw new Error("mail_fetch_failed");
-    const mail = await mailResponse.json();
-    if (mail.id !== id) throw new Error("mail_id_mismatch");
-    const sender = address(mail.from);
-    const to = (Array.isArray(mail.to) ? mail.to : []).map(address);
-    const authenticated = ["dkim", "dmarc"].some(k => mail.authentication?.[k] === "pass");
-    // Forwarded mail may preserve DKIM. If authentication breaks, review forwarding rules;
-    // never accept a spoofable From header alone.
-    if (!authenticated || !EMAIL.test(sender) || !senders.includes(sender) || !to.some(x => recipients.includes(x))) {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
-    const category = classifyEmail(mail.subject, mail.text);
-    const dbResponse = await fetch(dbUrl.replace(/\/$/, "") + "/rest/v1/email_intake_messages?on_conflict=provider,provider_message_id", {
-      method: "POST",
-      headers: {
-        apikey: dbKey, Authorization: "Bearer " + dbKey,
-        "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal",
-      },
-      body: JSON.stringify({
-        organization_id: orgId, provider: "resend", provider_message_id: id,
-        sender, subject: String(mail.subject || "").slice(0, 300),
-        received_at: mail.created_at || new Date().toISOString(),
-        processing_status: "review_required", classification: category,
-      }),
-    });
-    if (!dbResponse.ok) throw new Error("intake_save_failed");
-    return res.status(200).json({ ok: true });
+    const outcome = await processReceivedEmail(id, settings);
+    return res.status(200).json({ ok: true, ignored: outcome === "ignored" });
   } catch (error) {
     console.error("email_intake_error", error.message);
     return res.status(502).json({ error: "intake_failed" });
