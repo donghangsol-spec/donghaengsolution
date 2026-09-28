@@ -1,5 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import { classifyEmail } from './email-intake-webhook.js';
+import { extractMailDraft, contentDraftHeaders } from './email-content-draft.js';
 
 const email = value => String(value || '').trim().toLowerCase();
 const list = value => String(value || '').split(',').map(email).filter(Boolean);
@@ -33,7 +34,6 @@ export function classifyNaverMessage(message, settings) {
   // The queue never creates a transaction, employee, payroll entry or filing.
   const subject = String(message.envelope?.subject || '').slice(0, 300);
   const classification = classifyEmail(subject, filenames(message.bodyStructure).join(' '));
-  if (classification === 'unknown') return null;
   return { sender, subject, classification };
 }
 
@@ -51,7 +51,7 @@ export async function collectNaver(settings, { Client = ImapFlow, request = fetc
       const recent = ids.slice(-20);
       has_more = ids.length > recent.length;
       for (const uid of recent) {
-        const message = await client.fetchOne(uid, { uid: true, envelope: true, bodyStructure: true, internalDate: true }, { uid: true });
+        const message = await client.fetchOne(uid, { uid: true, envelope: true, bodyStructure: true, internalDate: true, size: true }, { uid: true });
         if (!message) continue;
         checked++;
         const item = classifyNaverMessage(message, settings);
@@ -67,6 +67,39 @@ export async function collectNaver(settings, { Client = ImapFlow, request = fetc
             processing_status: 'review_required' }),
         });
         if (!response.ok) throw new Error('intake_save_failed');
+        // Preview is idempotent: skip repeated MIME downloads after the first successful draft.
+        const key = contentDraftHeaders(settings.dbKey);
+        const db = settings.dbUrl.replace(/\/$/, '');
+        const messageQuery = new URLSearchParams({ select: 'id', provider: 'eq.other', provider_message_id: 'eq.' + providerId, limit: '1' });
+        const messageResponse = await request(db + '/rest/v1/email_intake_messages?' + messageQuery, { headers: key });
+        if (!messageResponse.ok) throw new Error('message_lookup_failed');
+        const [saved] = await messageResponse.json();
+        if (!saved?.id) throw new Error('message_not_saved');
+        const draftQuery = new URLSearchParams({ select: 'id', message_id: 'eq.' + saved.id, limit: '1' });
+        const existing = await request(db + '/rest/v1/email_content_drafts?' + draftQuery, { headers: key });
+        if (!existing.ok) throw new Error('draft_lookup_failed');
+        if (!(await existing.json()).length) {
+          let draft;
+          if (!Number.isSafeInteger(message.size) || message.size > 6 * 1024 * 1024) draft = { status: 'size_limit', text: '', attachments: [] };
+          else {
+            const raw = await client.fetchOne(uid, { source: true }, { uid: true });
+            draft = await extractMailDraft(raw?.source);
+          }
+          const savedDraft = await request(db + '/rest/v1/email_content_drafts?on_conflict=message_id', {
+            method: 'POST', headers: { ...key, Prefer: 'resolution=ignore-duplicates,return=minimal' },
+            body: JSON.stringify({ organization_id: settings.organizationId, message_id: saved.id,
+              status: draft.status, text_preview: draft.text, attachment_previews: draft.attachments,
+              truncated: !!draft.truncated }),
+          });
+          if (!savedDraft.ok) throw new Error('draft_save_failed');
+          const bodyCategory = classifyEmail(item.subject, draft.text);
+          if (item.classification === 'unknown' && bodyCategory !== 'unknown') {
+            const updated = await request(db + '/rest/v1/email_intake_messages?id=eq.' + saved.id, {
+              method: 'PATCH', headers: key, body: JSON.stringify({ classification: bodyCategory }),
+            });
+            if (!updated.ok) throw new Error('classification_update_failed');
+          }
+        }
         reviewed++;
       }
     } finally { lock.release(); }

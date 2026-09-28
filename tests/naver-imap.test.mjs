@@ -11,11 +11,12 @@ class FakeClient {
   async connect() {}
   async getMailboxLock() { return {release(){}}; }
   async search(){return [1,2];}
-  async fetchOne(uid){return {uid, internalDate:new Date('2026-09-28T00:00:00Z'),envelope:{from:[{address:uid===1?'approved@example.com':'untrusted@example.com'}],subject:'급여대장'}};}
+  async fetchOne(uid, query){if(query.source)return {source:Buffer.from('From: approved@example.com\r\nSubject: 급여대장\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n테스트')};return {uid, size:1024, internalDate:new Date('2026-09-28T00:00:00Z'),envelope:{from:[{address:uid===1?'approved@example.com':'untrusted@example.com'}],subject:'급여대장'}};}
   async logout(){}
 }
-const result=await collectNaver(settings,{Client:FakeClient,request:async (url, options)=>{posted.push(JSON.parse(options.body));return {ok:true};}});
+const result=await collectNaver(settings,{Client:FakeClient,request:async (url, options)=>{if(options.body){posted.push(JSON.parse(options.body));return {ok:true}}if(url.includes('email_content_drafts'))return {ok:true,json:async()=>[]};return {ok:true,json:async()=>[{id:'00000000-0000-4000-8000-000000000002'}]};}});
 assert.deepEqual({checked:result.checked,reviewed:result.reviewed,ignored:result.ignored},{checked:2,reviewed:1,ignored:1});
 assert.equal(posted[0].provider_message_id,`naver:${settings.organizationId}:123:1`);
 assert.equal(posted[0].processing_status,'review_required');
+assert.equal(posted[1].text_preview,'테스트');
 console.log('Naver IMAP collector checks passed');
