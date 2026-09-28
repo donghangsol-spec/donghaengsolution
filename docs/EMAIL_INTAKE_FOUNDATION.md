@@ -98,3 +98,30 @@ Using synthetic/non-customer fixtures:
 ## Production gate
 
 Real mailbox/customer-data ingestion remains OFF until private Storage/RLS, retention/deletion policy, cross-organization tests, audit logging, and CI security checks pass.
+
+## Implemented review-only webhook
+
+The Vercel POST route `/api/email-intake-webhook` verifies the raw Resend/Svix signature
+and a five-minute timestamp, then retrieves the message from Resend. It accepts
+only explicitly configured senders and recipients with a passing DKIM or DMARC
+result. A unique provider message ID makes retries idempotent. It classifies the
+subject and plain-text body as transaction, payroll, insurance, or unknown, and
+stores only sender, subject, time, category and review-required state in the
+organization's existing RLS-protected intake table. The accounting review tab
+shows those items. Email body instructions are never executed; no ledger,
+payroll, insurance, or filing row is written by this route.
+
+`EMAIL_INTAKE_ENABLED` defaults to false. Before enabling it, configure the
+Vercel server-only `RESEND_WEBHOOK_SECRET`, `RESEND_API_KEY`,
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`EMAIL_INTAKE_ORGANIZATION_ID`, `EMAIL_INTAKE_ALLOWED_SENDERS`, and
+`EMAIL_INTAKE_RECIPIENTS`; apply the classification migration; confirm
+retention/deletion and mailbox authorization; then register a Resend
+`email.received` webhook at the production route. Avoid changing the MX
+records of an existing Naver mailbox. A deliberate forwarding rule to a
+dedicated receiving address is required if Naver is the source.
+
+Attachment parsing, employee/company matching, row-by-row preview, selective
+commit and audit trail remain separate gates. Do not claim imported email
+amounts or acquisition/loss requests are in the business tables until these
+gates pass with synthetic fixtures and an authorized review.
