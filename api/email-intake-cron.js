@@ -10,7 +10,15 @@ export default async function handler(req, res) {
   if (process.env.NAVER_IMAP_ENABLED !== 'true' || !naverConfigured(settings)) {
     return res.status(503).json({ error: 'intake_not_configured' });
   }
-  try { return res.status(200).json(await collectNaver(settings)); }
+  try {
+    const result = await collectNaver(settings);
+    const cutoff = new Date().toISOString();
+    const deleted = await fetch(settings.dbUrl.replace(/\/$/, '') + '/rest/v1/email_content_drafts?expires_at=lt.' + encodeURIComponent(cutoff), {
+      method: 'DELETE', headers: { apikey: settings.dbKey, Authorization: 'Bearer ' + settings.dbKey },
+    });
+    if (!deleted.ok) throw new Error('draft_cleanup_failed');
+    return res.status(200).json(result);
+  }
   catch (error) {
     console.error('naver_intake_cron_error', error.message);
     return res.status(502).json({ error: 'collection_failed' });
