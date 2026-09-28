@@ -16,8 +16,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - run: node scripts/check-static.mjs
       - run: node tests/company-switch.test.mjs
       - run: node tests/accounting-company.test.mjs
       - run: node tests/sandbox-gate.test.mjs
       - run: node tests/contact-intake-gate.test.mjs
+      - run: node tests/email-intake-webhook.test.mjs
+      - run: node tests/email-intake-collect.test.mjs
+      - run: node tests/naver-imap.test.mjs

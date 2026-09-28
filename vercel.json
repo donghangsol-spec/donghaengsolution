@@ -41,5 +41,19 @@
       "destination": "/accounting",
       "permanent": false
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/email-intake-cron",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "functions": {
+    "api/email-intake-collect.js": {
+      "maxDuration": 60
+    },
+    "api/email-intake-cron.js": {
+      "maxDuration": 60
+    }
+  }
 }
