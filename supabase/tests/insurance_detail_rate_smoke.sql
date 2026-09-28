@@ -5,6 +5,8 @@ declare v_org uuid; v_company uuid; v_employee uuid; v_request uuid; v_count int
 begin
   if to_regclass('public.insurance_request_details') is null then raise exception 'insurance_request_details missing'; end if;
   if to_regclass('private.employee_identity_secrets') is null then raise exception 'employee_identity_secrets missing'; end if;
+  if not (select relrowsecurity from pg_class where oid='private.employee_identity_secrets'::regclass) then raise exception 'employee_identity_secrets RLS must be enabled'; end if;
+  if has_table_privilege('authenticated','private.employee_identity_secrets','SELECT') then raise exception 'authenticated must not read employee identity secrets'; end if;
   if to_regclass('public.insurance_rule_versions') is null then raise exception 'insurance_rule_versions missing'; end if;
   if to_regclass('public.statutory_rate_versions') is null then raise exception 'statutory_rate_versions missing'; end if;
   if to_regprocedure('public.evaluate_insurance_request_eligibility(uuid)') is null then raise exception 'eligibility rpc missing'; end if;
