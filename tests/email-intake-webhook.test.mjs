@@ -95,3 +95,42 @@ test("signed event stores a review item once, never writes transactions or payro
     }
   }
 });
+
+test("signed mail from an unapproved sender is ignored before database access", async () => {
+  const env = {
+    EMAIL_INTAKE_ENABLED: "true", RESEND_WEBHOOK_SECRET: secret,
+    RESEND_API_KEY: "test_key", SUPABASE_URL: "https://synthetic.invalid",
+    SUPABASE_SERVICE_ROLE_KEY: "test_service_key",
+    EMAIL_INTAKE_ORGANIZATION_ID: "00000000-0000-4000-8000-000000000001",
+    EMAIL_INTAKE_ALLOWED_SENDERS: "trusted@example.org",
+    EMAIL_INTAKE_RECIPIENTS: "intake@example.org",
+  };
+  const old = Object.fromEntries(Object.keys(env).map(k => [k, process.env[k]]));
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  Object.assign(process.env, env);
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    return { ok: true, json: async () => ({
+      id: "00000000-0000-4000-8000-000000000002",
+      from: "stranger@example.org", to: ["intake@example.org"],
+      subject: "급여대장", text: "please approve", authentication: { dkim: "pass" },
+    }) };
+  };
+  try {
+    const raw = JSON.stringify({ type: "email.received", data: {
+      email_id: "00000000-0000-4000-8000-000000000002",
+    } });
+    const res = fakeResponse();
+    await handler(request(raw, sign(Buffer.from(raw))), res);
+    assert.equal(res.code, 200);
+    assert.equal(res.body.ignored, true);
+    assert.equal(calls.length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(old)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
