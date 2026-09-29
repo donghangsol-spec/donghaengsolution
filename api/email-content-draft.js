@@ -77,5 +77,10 @@ export async function extractMailDraft(source) {
 }
 
 export function contentDraftHeaders(key) {
-  return { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' };
+  const value = String(key || '').trim();
+  return {
+    apikey: value,
+    ...(!value.startsWith('sb_secret_') ? { Authorization: 'Bearer ' + value } : {}),
+    'Content-Type': 'application/json',
+  };
 }
