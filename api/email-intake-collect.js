@@ -33,7 +33,12 @@ export default async function handler(req, res) {
       if (!["owner", "admin", "reviewer"].includes(members?.[0]?.role)) return res.status(403).json({ error: "access_denied" });
       return res.status(200).json(await collectNaver(settings));
     } catch (error) {
-      console.error("naver_intake_collect_error", error.message);
+      console.error("naver_intake_collect_error", {
+        stage: error.intakeStage || 'access_check',
+        code: error.code || null,
+        responseStatus: error.responseStatus || null,
+        message: error.message,
+      });
       return res.status(502).json({ error: "collection_failed" });
     }
   }

@@ -29,4 +29,9 @@ assert.equal(posted[0].processing_status,'review_required');
 assert.equal(posted[1].text_preview,'테스트');
 assert.equal(posted[2].sender,'untrusted@example.com');
 assert.equal(posted[2].processing_status,'review_required');
+class FailedLoginClient extends FakeClient {
+  async connect() { throw new Error('Command failed'); }
+}
+await assert.rejects(collectNaver(settings,{Client:FailedLoginClient}), error =>
+  error.message === 'Command failed' && error.intakeStage === 'connect');
 console.log('Naver IMAP collector checks passed');
