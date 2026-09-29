@@ -84,8 +84,7 @@ export async function collectNaver(settings, { Client = ImapFlow, request = fetc
         const providerId = `naver:${settings.organizationId}:${client.mailbox.uidValidity}:${message.uid}`;
         const response = await request(settings.dbUrl.replace(/\/$/, '') + '/rest/v1/email_intake_messages?on_conflict=provider,provider_message_id', {
           method: 'POST',
-          headers: { apikey: settings.dbKey, Authorization: 'Bearer ' + settings.dbKey,
-            'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          headers: { ...contentDraftHeaders(settings.dbKey), Prefer: 'resolution=ignore-duplicates,return=minimal' },
           body: JSON.stringify({ organization_id: settings.organizationId, provider: 'other',
             provider_message_id: providerId, ...item,
             received_at: message.internalDate?.toISOString() || new Date().toISOString(),

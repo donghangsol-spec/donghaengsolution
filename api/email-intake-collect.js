@@ -1,4 +1,5 @@
 import { intakeConfigured, intakeSettings, processReceivedEmail } from "./email-intake-webhook.js";
+import { contentDraftHeaders } from "./email-content-draft.js";
 
 // Load the Naver collector after the request reaches the enabled branch.
 
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
       const user = await userResponse.json();
       if (!UUID.test(user.id || "") || !UUID.test(settings.organizationId)) return res.status(403).json({ error: "access_denied" });
       const query = new URLSearchParams({ select: "role", organization_id: "eq." + settings.organizationId, user_id: "eq." + user.id, limit: "1" });
-      const membership = await fetch(base + "/rest/v1/organization_members?" + query, { headers: { apikey: settings.dbKey, Authorization: "Bearer " + settings.dbKey } });
+      const membership = await fetch(base + "/rest/v1/organization_members?" + query, { headers: contentDraftHeaders(settings.dbKey) });
       if (!membership.ok) throw new Error("membership_check_failed");
       const members = await membership.json();
       if (!["owner", "admin", "reviewer"].includes(members?.[0]?.role)) return res.status(403).json({ error: "access_denied" });
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
       user_id: "eq." + user.id, limit: "1",
     });
     const memberResponse = await fetch(base + "/rest/v1/organization_members?" + query, {
-      headers: { apikey: settings.dbKey, Authorization: "Bearer " + settings.dbKey },
+      headers: contentDraftHeaders(settings.dbKey),
     });
     if (!memberResponse.ok) throw new Error("membership_check_failed");
     const members = await memberResponse.json();
