@@ -34,6 +34,32 @@ export function classifyNaverMessage(message) {
   return { sender, subject, classification };
 }
 
+export function pendingNaverUids(ids, completedIds, organizationId, uidValidity) {
+  const pending = ids.filter(uid => !completedIds.has(`naver:${organizationId}:${uidValidity}:${uid}`));
+  return { uids: pending.slice(-20), hasMore: pending.length > 20 };
+}
+
+async function completedNaverIds(settings, since, request) {
+  const completed = new Set();
+  const db = settings.dbUrl.replace(/\/$/, '');
+  for (let offset = 0; ; offset += 1000) {
+    const query = new URLSearchParams({
+      select: 'provider_message_id,email_content_drafts!inner(id)',
+      organization_id: 'eq.' + settings.organizationId,
+      provider: 'eq.other', received_at: 'gte.' + since.toISOString(),
+      limit: '1000', offset: String(offset),
+    });
+    const response = await request(db + '/rest/v1/email_intake_messages?' + query, {
+      headers: contentDraftHeaders(settings.dbKey),
+    });
+    if (!response.ok) throw new Error('completed_lookup_failed');
+    const page = await response.json();
+    if (!Array.isArray(page)) throw new Error('completed_lookup_invalid');
+    for (const row of page) completed.add(row.provider_message_id);
+    if (page.length < 1000) return completed;
+  }
+}
+
 export async function collectNaver(settings, { Client = ImapFlow, request = fetch } = {}) {
   if (!naverConfigured(settings)) throw new Error('naver_not_configured');
   const client = new Client({ host: 'imap.naver.com', port: 993, secure: true,
@@ -44,9 +70,12 @@ export async function collectNaver(settings, { Client = ImapFlow, request = fetc
     await client.connect();
     const lock = await client.getMailboxLock('INBOX');
     try {
-      const ids = await client.search({ since: new Date(Date.now() - 30 * 86400000) }, { uid: true });
-      const recent = ids.slice(-20);
-      has_more = ids.length > recent.length;
+      const since = new Date(Date.now() - 30 * 86400000);
+      const ids = await client.search({ since }, { uid: true });
+      const completed = await completedNaverIds(settings, since, request);
+      const pending = pendingNaverUids(ids, completed, settings.organizationId, client.mailbox.uidValidity);
+      const recent = pending.uids;
+      has_more = pending.hasMore;
       for (const uid of recent) {
         const message = await client.fetchOne(uid, { uid: true, envelope: true, bodyStructure: true, internalDate: true, size: true }, { uid: true });
         if (!message) continue;
