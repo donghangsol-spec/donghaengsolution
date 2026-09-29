@@ -1,6 +1,5 @@
 import { simpleParser } from 'mailparser';
 import readXlsxFile from 'read-excel-file/node';
-import { parse as parseCsv } from 'csv-parse/sync';
 
 const MAX_MESSAGE = 6 * 1024 * 1024;
 const MAX_ATTACHMENT = 3 * 1024 * 1024;
@@ -13,6 +12,39 @@ function cell(value) {
   return String(value ?? '').slice(0, 200);
 }
 
+// Keep CSV preview parsing local so the mail collector does not depend on a
+// package subpath that may be omitted from a deployed serverless function.
+function parseCsvPreview(text) {
+  const rows = [];
+  let row = [], value = '', quoted = false, closed = false;
+  const finish = () => {
+    row.push(value);
+    if (row.some(item => item.trim())) rows.push(row);
+    row = []; value = ''; closed = false;
+  };
+  for (let i = 0; i < text.length && rows.length <= MAX_ROWS; i++) {
+    const char = text[i];
+    if (quoted) {
+      if (char === '"' && text[i + 1] === '"') { value += '"'; i++; }
+      else if (char === '"') { quoted = false; closed = true; }
+      else value += char;
+    } else if (char === '"') {
+      if (value || closed) throw new Error('invalid_csv_quote');
+      quoted = true;
+    } else if (char === ',') {
+      row.push(value); value = ''; closed = false;
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      finish();
+    } else if (closed) {
+      if (!/\s/.test(char)) throw new Error('invalid_csv_quote');
+    } else value += char;
+  }
+  if (quoted) throw new Error('unclosed_csv_quote');
+  if (row.length || value || closed) finish();
+  return rows;
+}
+
 export async function extractAttachment(attachment) {
   const name = String(attachment.filename || '').slice(0, 200);
   const bytes = attachment.content;
@@ -21,7 +53,7 @@ export async function extractAttachment(attachment) {
   try {
     let rows;
     if (extension === 'csv') {
-      rows = parseCsv(bytes.toString('utf8').replace(/^\ufeff/, ''), { relax_quotes: false, skip_empty_lines: true, to_line: MAX_ROWS + 1 });
+      rows = parseCsvPreview(bytes.toString('utf8').replace(/^\ufeff/, ''));
     } else if (extension === 'xlsx') {
       rows = await readXlsxFile(bytes);
       if (rows.length > MAX_ROWS + 1) rows = rows.slice(0, MAX_ROWS + 1);

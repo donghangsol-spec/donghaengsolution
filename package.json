@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "csv-parse": "7.0.3",
     "imapflow": "2.1.0",
     "mailparser": "3.9.29",
     "read-excel-file": "5.8.6"
