@@ -3,20 +3,18 @@ import { classifyEmail } from './email-intake-webhook.js';
 import { extractMailDraft, contentDraftHeaders } from './email-content-draft.js';
 
 const email = value => String(value || '').trim().toLowerCase();
-const list = value => String(value || '').split(',').map(email).filter(Boolean);
 
 export function naverSettings(env = process.env) {
   return {
     user: email(env.NAVER_IMAP_USER), password: env.NAVER_IMAP_APP_PASSWORD,
     organizationId: env.EMAIL_INTAKE_ORGANIZATION_ID,
     dbUrl: env.SUPABASE_URL, dbKey: env.SUPABASE_SERVICE_ROLE_KEY,
-    senders: list(env.EMAIL_INTAKE_ALLOWED_SENDERS),
   };
 }
 
 export function naverConfigured(s) {
   return !!(s.user?.endsWith('@naver.com') && s.password && s.organizationId &&
-    s.dbUrl && s.dbKey && s.senders.length);
+    s.dbUrl && s.dbKey);
 }
 
 function filenames(structure, out = []) {
@@ -27,9 +25,8 @@ function filenames(structure, out = []) {
   return out;
 }
 
-export function classifyNaverMessage(message, settings) {
+export function classifyNaverMessage(message) {
   const sender = email(message.envelope?.from?.[0]?.address);
-  if (!settings.senders.includes(sender)) return null;
   // IMAP account authentication only proves mailbox access. Sender headers remain untrusted.
   // The queue never creates a transaction, employee, payroll entry or filing.
   const subject = String(message.envelope?.subject || '').slice(0, 300);
@@ -54,8 +51,7 @@ export async function collectNaver(settings, { Client = ImapFlow, request = fetc
         const message = await client.fetchOne(uid, { uid: true, envelope: true, bodyStructure: true, internalDate: true, size: true }, { uid: true });
         if (!message) continue;
         checked++;
-        const item = classifyNaverMessage(message, settings);
-        if (!item) { ignored++; continue; }
+        const item = classifyNaverMessage(message);
         const providerId = `naver:${settings.organizationId}:${client.mailbox.uidValidity}:${message.uid}`;
         const response = await request(settings.dbUrl.replace(/\/$/, '') + '/rest/v1/email_intake_messages?on_conflict=provider,provider_message_id', {
           method: 'POST',
