@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { extractAttachment, extractMailDraft } from '../api/email-content-draft.js';
+import { extractAttachment, extractMailDraft, contentDraftHeaders } from '../api/email-content-draft.js';
+
+assert.deepEqual(contentDraftHeaders('sb_secret_test'), { apikey: 'sb_secret_test', 'Content-Type': 'application/json' });
+assert.equal(contentDraftHeaders('legacy-jwt').Authorization, 'Bearer legacy-jwt');
 
 const csv = await extractAttachment({ filename:'거래내역.csv', content:Buffer.from('거래일,적요,입금,출금\n2026-09-28,시험,1000,0\n') });
 assert.equal(csv.status, 'preview');
