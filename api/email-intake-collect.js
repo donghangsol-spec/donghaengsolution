@@ -1,6 +1,6 @@
 import { intakeConfigured, intakeSettings, processReceivedEmail } from "./email-intake-webhook.js";
 
-import { collectNaver, naverConfigured, naverSettings } from "./naver-imap.js";
+// Load the Naver collector after the request reaches the enabled branch.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -8,10 +8,17 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
   if (process.env.NAVER_IMAP_ENABLED === "true") {
-    const settings = naverSettings();
-    if (!naverConfigured(settings) || !process.env.SUPABASE_ANON_KEY) return res.status(503).json({ error: "intake_not_configured" });
     const token = String(req.headers.authorization || "").match(/^Bearer (\S+)$/i)?.[1];
     if (!token) return res.status(401).json({ error: "authentication_required" });
+    let collectNaver, naverConfigured, naverSettings;
+    try {
+      ({ collectNaver, naverConfigured, naverSettings } = await import("./naver-imap.js"));
+    } catch (error) {
+      console.error("naver_intake_initialization_error", error.message);
+      return res.status(502).json({ error: "collector_initialization_failed" });
+    }
+    const settings = naverSettings();
+    if (!naverConfigured(settings) || !process.env.SUPABASE_ANON_KEY) return res.status(503).json({ error: "intake_not_configured" });
     const base = settings.dbUrl.replace(/\/$/, "");
     try {
       const userResponse = await fetch(base + "/auth/v1/user", { headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token } });
