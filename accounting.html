@@ -88,8 +88,11 @@ $('#collectEmailIntake').onclick=async()=>{
     const {data:{session:current}}=await sb.auth.getSession();
     if(!current?.access_token)throw new Error('로그인이 필요합니다.');
     const response=await fetch('/api/email-intake-collect',{method:'POST',headers:{Authorization:'Bearer '+current.access_token}});
-    const result=await response.json();
-    if(!response.ok)throw new Error(response.status===503?'메일 수집 연결이 아직 활성화되지 않았습니다.':response.status===403?'수집 권한이 없습니다.':'메일 수집에 실패했습니다.');
+    const raw=await response.text();
+    let result;
+    try{result=JSON.parse(raw)}catch{result=null}
+    if(!response.ok)throw new Error(response.status===503?'메일 수집 연결이 아직 활성화되지 않았습니다.':response.status===403?'수집 권한이 없습니다.':'메일 수집 서버 오류 (HTTP '+response.status+(result?.error?', '+result.error:'')+'). Vercel 함수 로그를 확인해 주세요.');
+    if(!result||typeof result.checked!=='number')throw new Error('메일 수집 응답 형식 오류 (HTTP '+response.status+'). Vercel 함수 로그를 확인해 주세요.');
     await loadEmailIntake();
     alert('메일 '+result.checked+'건 확인 · 검토 대상 확인 '+result.reviewed+'건'+(result.has_more?' · 남은 메일은 다음 수집에서 처리됩니다. 지금 수집을 다시 눌러 이어갈 수 있습니다.':''));
   }catch(error){alert(error.message||'메일 수집에 실패했습니다.')}
