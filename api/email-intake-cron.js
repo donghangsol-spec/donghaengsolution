@@ -1,4 +1,5 @@
 import { collectNaver, naverConfigured, naverSettings } from './naver-imap.js';
+import { contentDraftHeaders } from './email-content-draft.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -14,7 +15,7 @@ export default async function handler(req, res) {
     const result = await collectNaver(settings);
     const cutoff = new Date().toISOString();
     const deleted = await fetch(settings.dbUrl.replace(/\/$/, '') + '/rest/v1/email_content_drafts?expires_at=lt.' + encodeURIComponent(cutoff), {
-      method: 'DELETE', headers: { apikey: settings.dbKey, Authorization: 'Bearer ' + settings.dbKey },
+      method: 'DELETE', headers: contentDraftHeaders(settings.dbKey),
     });
     if (!deleted.ok) throw new Error('draft_cleanup_failed');
     return res.status(200).json(result);
