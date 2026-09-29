@@ -91,7 +91,7 @@ $('#collectEmailIntake').onclick=async()=>{
     const result=await response.json();
     if(!response.ok)throw new Error(response.status===503?'메일 수집 연결이 아직 활성화되지 않았습니다.':response.status===403?'수집 권한이 없습니다.':'메일 수집에 실패했습니다.');
     await loadEmailIntake();
-    alert('메일 '+result.checked+'건 확인 · 검토 대상 확인 '+result.reviewed+'건'+(result.has_more?' · 이전 메일은 이번 회차에 포함되지 않았습니다.':''));
+    alert('메일 '+result.checked+'건 확인 · 검토 대상 확인 '+result.reviewed+'건'+(result.has_more?' · 남은 메일은 다음 수집에서 처리됩니다. 지금 수집을 다시 눌러 이어갈 수 있습니다.':''));
   }catch(error){alert(error.message||'메일 수집에 실패했습니다.')}
   finally{button.disabled=false;button.textContent='지금 수집'}
 };
