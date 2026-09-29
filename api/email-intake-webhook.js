@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { contentDraftHeaders } from "./email-content-draft.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -82,7 +83,7 @@ export async function processReceivedEmail(id, settings) {
   const dbResponse = await fetch(dbUrl.replace(/\/$/, "") + "/rest/v1/email_intake_messages?on_conflict=provider,provider_message_id", {
     method: "POST",
     headers: {
-      apikey: dbKey, Authorization: "Bearer " + dbKey,
+      ...contentDraftHeaders(dbKey),
       "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal",
     },
     body: JSON.stringify({
