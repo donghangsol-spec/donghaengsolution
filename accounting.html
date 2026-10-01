@@ -15,7 +15,7 @@
 <section id="dashboard" class="view active"><div class="hero"><h2>장기요양기관 회계업무를 승인 중심 AX로</h2><p>거래 분류와 신고자료는 시스템이 초안을 만들고 최종 확정은 담당자가 수행합니다. 4대보험은 직원 입·퇴사 요청부터 처리현황까지 같은 서비스에서 관리합니다.</p></div><div class="cards"><div class="card"><div class="kpi-label">대상 거래</div><div class="kpi" id="kAll">0</div></div><div class="card"><div class="kpi-label">검토필요</div><div class="kpi" id="kReview">0</div></div><div class="card"><div class="kpi-label">보완요청</div><div class="kpi" id="kNeed">0</div></div><div class="card"><div class="kpi-label">승인완료</div><div class="kpi" id="kApproved">0</div></div></div><div class="grid2"><div class="card"><h3>처리 원칙</h3><div class="oknotice">자동확정 없음 · 서버 권한검사 · 감사이력 저장 · 인증서 비밀번호 미수집</div></div><div class="card"><h3>4대보험 자동화</h3><p class="muted">직원 등록 → 요청 → 자동검증 → 승인대기 → 담당자 승인 → 제출대기 → 접수/처리결과</p></div></div></section>
 <section id="company" class="view"><div class="card"><h3>사업장 설정</h3><div id="companyRoleNotice" class="oknotice role-notice" hidden>직원 계정은 사업장 설정을 조회만 할 수 있습니다.</div><div class="formgrid"><label>사업장명<input id="companyName"></label><label>회계유형<select id="accountType"><option>비영리</option><option>영리</option></select></label><label>세부유형<select id="companyType"><option>장기요양기관</option><option>사회복지시설</option><option>기타</option></select></label><label>회계기준<input value="장기요양기관 재무·회계 규칙" disabled></label></div><div class="actions"><button class="btn primary" id="saveCompany">저장</button></div></div></section>
 <section id="transactions" class="view"><div class="card"><div class="toolbar"><div><h3>거래내역</h3><div class="muted">권장 CSV: 거래일,적요,입금,출금</div></div><div><input type="file" id="csv" accept=".csv"> <button class="btn secondary" id="sampleCsv">CSV 템플릿</button></div></div><div class="tablewrap"><table class="table"><thead><tr><th>ID</th><th>일자</th><th>적요</th><th>입금</th><th>출금</th><th>추천</th><th>신뢰도</th><th>상태</th><th>작업</th></tr></thead><tbody id="txBody"></tbody></table></div></div><div class="card" style="margin-top:14px"><h3>거래 증빙</h3><p class="muted">거래를 선택해 비공개 증빙을 확인합니다. PDF·PNG·JPG, 최대 10 MB.</p><select id="evidenceTransaction" class="btn secondary" aria-label="증빙 거래 선택"></select> <input id="evidenceUpload" type="file" accept=".pdf,.png,.jpg,.jpeg" aria-label="증빙 파일" hidden><button id="evidenceUploadButton" class="btn primary" hidden>증빙 첨부</button><div id="evidenceList" class="muted" style="margin-top:12px">거래를 선택해 주세요.</div></div></section>
-<section id="review" class="view"><div class="card"><h3>검토함</h3><div id="reviewList"></div></div><div class="card" style="margin-top:14px"><div class="toolbar"><div><h3>메일 수집 검토</h3><p class="muted">분류된 수신 메일은 검토 대상으로만 표시합니다. 거래·급여·4대보험에 자동 확정되거나 신고되지 않습니다.</p></div><div class="actions"><button class="btn primary" id="collectEmailIntake">지금 수집</button><button class="btn secondary" id="reloadEmailIntake">목록 새로고침</button></div></div><div class="tablewrap"><table class="table"><thead><tr><th>수신일</th><th>유형</th><th>제목</th><th>발신자</th><th>상태</th><th>초안</th></tr></thead><tbody id="emailIntakeBody"><tr><td colspan="6">새로고침을 눌러 확인하세요.</td></tr></tbody></table></div><div id="emailDraftDetail" class="card" hidden></div></div></section>
+<section id="review" class="view"><div class="card"><h3>검토함</h3><div id="reviewList"></div></div><div class="card" style="margin-top:14px"><div class="toolbar"><div><h3>메일 수집 검토</h3><p class="muted">분류된 수신 메일은 검토 대상으로만 표시합니다. 거래·급여·4대보험에 자동 확정되거나 신고되지 않습니다.</p></div><div class="actions"><button class="btn primary" id="collectEmailIntake">지금 수집</button><button class="btn secondary" id="reloadEmailIntake">목록 새로고침</button><label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--muted)"><input type="checkbox" id="emailIntakeShowHidden">숨긴 메일 표시<span id="emailIntakeHiddenCount"></span></label></div></div><div class="tablewrap"><table class="table"><thead><tr><th>수신일</th><th>유형</th><th>제목</th><th>발신자</th><th>상태</th><th>초안</th></tr></thead><tbody id="emailIntakeBody"><tr><td colspan="6">새로고침을 눌러 확인하세요.</td></tr></tbody></table></div></div></section>
 <section id="payroll" class="view"><div class="grid2"><div class="card"><h3>원천세 신고 준비</h3><div class="notice">현재 알파에서는 신고기관으로 실제 전송하지 않습니다.</div><div id="withSummary"></div><div class="actions"><button class="btn secondary" onclick="makeFiling('withholding')">자료 생성</button><button class="btn primary" id="approveWithholding" onclick="approveFiling('withholding')">담당자 승인</button></div></div><div class="card"><h3>4대보험 신고 준비</h3><div class="notice">직원별 취득·상실 업무는 4대보험 메뉴에서 관리합니다.</div><div id="insSummary"></div><div class="actions"><button class="btn secondary" onclick="openInsurance()">4대보험 업무 열기</button></div></div></div></section>
 <section id="insurance" class="view"><div class="cards"><div class="card"><div class="kpi-label">등록 직원</div><div class="kpi" id="iEmployees">0</div></div><div class="card"><div class="kpi-label">요청 진행중</div><div class="kpi" id="iPending">0</div></div><div class="card"><div class="kpi-label">승인/제출대기</div><div class="kpi" id="iReady">0</div></div><div class="card"><div class="kpi-label">처리완료</div><div class="kpi" id="iDone">0</div></div></div>
 <div class="grid2"><div class="card"><h3>직원 등록</h3><div class="formgrid"><label>직원명<input id="empName"></label><label>직원번호<input id="empNo"></label><label>생년월일<input id="empBirth" type="date"></label><label>입사일<input id="empHire" type="date"></label><label>퇴사일<input id="empTermination" type="date"></label><label>월 보수<input id="empSalary" type="number" min="0"></label><label>주 소정근로시간<input id="empHours" type="number" min="0" step="0.5"></label><label>고용형태<select id="empType"><option>정규직</option><option>계약직</option><option>일용직</option><option>단시간근로자</option><option>기타</option></select></label><label>상태<select id="empStatus"><option>재직</option><option>입사예정</option><option>퇴사예정</option><option>퇴사</option></select></label></div><div class="notice" style="margin-top:12px">주민등록번호 원문과 공동인증서 비밀번호는 수집하지 않습니다.</div><div class="actions"><button class="btn primary" id="saveEmployee">직원 저장</button><button class="btn secondary" id="cancelEmployeeEdit" hidden>수정 취소</button></div></div>
@@ -66,14 +66,28 @@ async function loadInsuranceData(){if(!session||!cloudCompanyId)return;const [er
 async function showPendingGate(){const {data:req}=await sb.rpc('my_signup_status');document.querySelector('.shell').style.display='none';$('#pendingGate').hidden=false;if(!req){$('#pendingTitle').textContent='사업장 연결 대기 중';$('#pendingMessage').textContent='아직 어느 사업장에도 연결되어 있지 않습니다. 관리자에게 문의해 주세요.'}else if(req.status==='대기'){$('#pendingTitle').textContent='가입 승인 대기 중';$('#pendingMessage').textContent='가입 신청(사업자등록번호 '+(req.business_registration_number||'-')+')이 접수되었습니다. 최고관리자가 사업장을 연결하면 자동으로 이용하실 수 있습니다.'}else if(req.status==='반려됨'){$('#pendingTitle').textContent='가입 신청이 반려되었습니다';$('#pendingMessage').textContent=(req.reject_reason||'사유가 전달되지 않았습니다.')+' 문의사항은 관리자에게 연락해 주세요.'}else{$('#pendingTitle').textContent='처리 중입니다';$('#pendingMessage').textContent='잠시 후 새로고침해 주세요.'}}
 $('#pendingSignOut').onclick=async()=>{await sb.auth.signOut();location.reload()};
 async function loadCloudData(){const {data:m,error:me}=await sb.from('organization_members').select('organization_id,role').eq('user_id',session.user.id).limit(1).maybeSingle();if(me)throw me;if(!m){await showPendingGate();return}orgId=m.organization_id;cloudRole=m.role;const requestedCompany=new URLSearchParams(location.search).get('company'),savedCompany=localStorage.getItem('next-company');const {data:companies,error:ce}=await sb.from('companies').select('*').eq('organization_id',orgId).eq('is_active',true).order('created_at',{ascending:true});if(ce)throw ce;const c=requestedCompany?companies?.find(x=>x.id===requestedCompany):companies?.find(x=>x.id===savedCompany)||companies?.[0];if(requestedCompany&&!c)throw new Error('선택한 사업장에 접근할 수 없습니다.');if(c){cloudCompanyId=c.id;company={name:c.name,account:c.account_type,type:c.company_type};const {data:rows,error:te}=await sb.from('transactions').select('*').eq('company_id',cloudCompanyId).order('transaction_date',{ascending:false}).limit(1000);if(te)throw te;tx=(rows||[]).map(mapDbTx);await loadInsuranceData()}else{cloudCompanyId=null;tx=[];await loadAudit()}$('#cloudStatus').textContent='Cloud · '+cloudRole;render()}
+let emailIntakeMessages=[];
+function dismissedEmailIntakeIds(){try{return new Set(JSON.parse(localStorage.getItem('email-intake-dismissed-'+orgId)||'[]'))}catch{return new Set()}}
+function setDismissedEmailIntakeIds(set){try{localStorage.setItem('email-intake-dismissed-'+orgId,JSON.stringify([...set]))}catch{}}
+function renderEmailIntakeRows(){
+  const body=$('#emailIntakeBody'),dismissed=dismissedEmailIntakeIds(),showHidden=$('#emailIntakeShowHidden').checked;
+  const kinds={transaction:'거래내역',payroll:'급여대장',insurance:'취득·상실',unknown:'확인 필요'};
+  $('#emailIntakeHiddenCount').textContent=dismissed.size?' ('+dismissed.size+'건)':'';
+  const visible=emailIntakeMessages.filter(m=>showHidden||!dismissed.has(m.id));
+  body.innerHTML=visible.map(m=>{
+    const isDismissed=dismissed.has(m.id);
+    return '<tr'+(isDismissed?' style="opacity:.5"':'')+'><td>'+esc(m.received_at?new Date(m.received_at).toLocaleString('ko-KR'):'-')+'</td><td>'+esc(kinds[m.classification]||'확인 필요')+'</td><td>'+esc(m.subject||'-')+'</td><td>'+esc(m.sender||'-')+'</td><td>'+esc(m.processing_status)+'</td><td><button class="btn secondary draft-open" data-id="'+esc(m.id)+'">초안 보기</button> <button class="btn secondary email-dismiss" data-id="'+esc(m.id)+'">'+(isDismissed?'목록에 표시':'숨기기')+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="6">'+(emailIntakeMessages.length?'숨긴 메일만 있습니다. 위 "숨긴 메일 표시"를 눌러 확인하세요.':'수집된 메일이 없습니다.')+'</td></tr>';
+}
 async function loadEmailIntake(){
   if(!orgId)return;
   const body=$('#emailIntakeBody');
   const {data,error}=await sb.from('email_intake_messages').select('id,received_at,classification,subject,sender,processing_status').eq('organization_id',orgId).order('received_at',{ascending:false}).limit(100);
   if(error){body.innerHTML='<tr><td colspan="6">메일 검토함을 불러올 수 없습니다.</td></tr>';return}
-  const kinds={transaction:'거래내역',payroll:'급여대장',insurance:'취득·상실',unknown:'확인 필요'};
-  body.innerHTML=(data||[]).map(m=>'<tr><td>'+esc(m.received_at?new Date(m.received_at).toLocaleString('ko-KR'):'-')+'</td><td>'+esc(kinds[m.classification]||'확인 필요')+'</td><td>'+esc(m.subject||'-')+'</td><td>'+esc(m.sender||'-')+'</td><td>'+esc(m.processing_status)+'</td><td><button class="btn secondary draft-open" data-id="'+esc(m.id)+'">초안 보기</button></td></tr>').join('')||'<tr><td colspan="6">수집된 메일이 없습니다.</td></tr>';
+  emailIntakeMessages=data||[];
+  renderEmailIntakeRows();
 }
+$('#emailIntakeShowHidden').onchange=renderEmailIntakeRows;
 function emailMatchSignals(message,draft){
   const text=[message.subject,message.sender,draft.text_preview,...(draft.attachment_previews||[]).flatMap(a=>(a.rows||[]).flat())].join(' ');
   const amounts=[...text.matchAll(/(?:^|[^0-9])(\\d{1,3}(?:,\\d{3})+|\\d{4,})(?:\\s*원)?/g)].map(m=>Number(m[1].replaceAll(',',''))).filter(n=>n>=100&&n<=1000000000);
@@ -143,13 +157,34 @@ function renderEmailMatches(message,draft){
   if(!result.rows.length)return '<div class="matchbox"><div class="match-title">거래 자동 매칭</div><div class="muted">일치도가 20점 이상인 거래가 없습니다. 자동확정하지 않고 담당자 검토 대상으로 유지합니다.</div></div>';
   return '<div class="matchbox"><div class="match-title">거래 자동 매칭 후보</div><div class="muted">금액·거래일·적요 단서를 조합한 추천입니다. 장부 반영은 담당자 승인 전까지 금지됩니다.</div>'+result.rows.map(x=>'<div class="match-row"><div class="score">'+x.score+'점</div><div><b>'+esc(x.t.date+' · '+x.t.desc)+'</b><br><span class="muted">'+money(Math.max(x.t.inc,x.t.out))+'원 · '+esc(x.reasons.join(', '))+'</span></div><span class="badge '+(x.score>=80?'approved':x.score>=50?'draft':'review')+'">'+(x.score>=80?'강한 후보':x.score>=50?'검토 후보':'약한 후보')+'</span></div>').join('')+'</div>';
 }
+function closeEmailIntakeDrafts(){
+  document.querySelectorAll('tr.draft-detail-row').forEach(tr=>tr.remove());
+  document.querySelectorAll('.draft-open').forEach(b=>b.textContent='초안 보기');
+}
 $('#emailIntakeBody').onclick=async(event)=>{
+  const importButton=event.target.closest('.attachment-import');
+  if(importButton){importAttachmentRows(importButton.dataset.msg,Number(importButton.dataset.idx),importButton);return}
+  const dismissButton=event.target.closest('.email-dismiss');
+  if(dismissButton){
+    const id=dismissButton.dataset.id,set=dismissedEmailIntakeIds();
+    if(set.has(id))set.delete(id);else set.add(id);
+    setDismissedEmailIntakeIds(set);closeEmailIntakeDrafts();renderEmailIntakeRows();return;
+  }
   const button=event.target.closest('.draft-open');if(!button)return;
-  const detail=$('#emailDraftDetail');detail.hidden=false;detail.textContent='초안과 거래 후보를 불러오는 중입니다.';
+  const id=button.dataset.id,row=button.closest('tr');
+  const already=document.querySelector('tr.draft-detail-row[data-for="'+id+'"]');
+  closeEmailIntakeDrafts();
+  if(already)return;
+  button.textContent='닫기';
+  const detailRow=document.createElement('tr');detailRow.className='draft-detail-row';detailRow.dataset.for=id;
+  const detailCell=document.createElement('td');detailCell.colSpan=6;
+  const detail=document.createElement('div');detail.className='card';detail.style.margin='8px 0';detail.textContent='초안과 거래 후보를 불러오는 중입니다.';
+  detailCell.appendChild(detail);detailRow.appendChild(detailCell);row.after(detailRow);
+  detailRow.scrollIntoView({behavior:'smooth',block:'nearest'});
   if(!['owner','admin','reviewer'].includes(cloudRole)){detail.textContent='초안 열람 권한이 없습니다.';return}
   const [draftResult,messageResult]=await Promise.all([
-    sb.from('email_content_drafts').select('status,text_preview,attachment_previews,truncated').eq('organization_id',orgId).eq('message_id',button.dataset.id).maybeSingle(),
-    sb.from('email_intake_messages').select('id,received_at,classification,subject,sender,processing_status').eq('organization_id',orgId).eq('id',button.dataset.id).maybeSingle()
+    sb.from('email_content_drafts').select('status,text_preview,attachment_previews,truncated').eq('organization_id',orgId).eq('message_id',id).maybeSingle(),
+    sb.from('email_intake_messages').select('id,received_at,classification,subject,sender,processing_status').eq('organization_id',orgId).eq('id',id).maybeSingle()
   ]);
   if(draftResult.error||messageResult.error){detail.textContent='초안 또는 거래 후보를 불러올 수 없습니다.';return}
   const data=draftResult.data,message=messageResult.data;
@@ -165,11 +200,7 @@ $('#emailIntakeBody').onclick=async(event)=>{
   });
   detail.innerHTML='<h3>메일 검토 초안</h3><p class="muted">상태: '+esc(data.status)+(data.truncated?' · 일부만 표시':'')+' · 원본과 대조 후 처리하세요.</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(data.text_preview||'본문 없음')+'</pre>'+parts.join('')+renderEmailMatches(message,data);
 };
-$('#emailDraftDetail').onclick=(event)=>{
-  const button=event.target.closest('.attachment-import');if(!button)return;
-  importAttachmentRows(button.dataset.msg,Number(button.dataset.idx),button);
-};
-$('#reloadEmailIntake').onclick=loadEmailIntake;
+$('#reloadEmailIntake').onclick=()=>{closeEmailIntakeDrafts();loadEmailIntake()};
 $('#collectEmailIntake').onclick=async()=>{
   const button=$('#collectEmailIntake');button.disabled=true;button.textContent='수집 중';
   try{
