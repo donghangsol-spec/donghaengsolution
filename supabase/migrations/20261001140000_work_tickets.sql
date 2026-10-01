@@ -28,7 +28,7 @@ create index if not exists idx_work_tickets_requested_by on public.work_tickets(
 alter table public.work_tickets enable row level security;
 
 create policy "work_tickets_select" on public.work_tickets for select
-using (public.is_org_member(organization_id));
+using (private.is_org_member(organization_id));
 
 -- 쓰기는 모두 아래 RPC 전용(상태 전이 규칙·권한을 한 곳에서 강제하기 위함).
 create policy "work_tickets_no_direct_write" on public.work_tickets
@@ -54,7 +54,7 @@ declare
   v_recipient record;
 begin
   if auth.uid() is null then raise exception 'authentication required'; end if;
-  if not public.is_org_member(p_organization_id) then raise exception 'organization membership required'; end if;
+  if not private.is_org_member(p_organization_id) then raise exception 'organization membership required'; end if;
   if coalesce(trim(p_title), '') = '' then raise exception 'title required'; end if;
   if p_company_id is not null and not exists (
     select 1 from public.companies c where c.id = p_company_id and c.organization_id = p_organization_id
@@ -109,7 +109,7 @@ begin
 
   select * into v_ticket from public.work_tickets where id = p_ticket_id for update;
   if v_ticket.id is null then raise exception 'ticket not found'; end if;
-  if not public.is_org_member(v_ticket.organization_id) then raise exception 'organization membership required'; end if;
+  if not private.is_org_member(v_ticket.organization_id) then raise exception 'organization membership required'; end if;
 
   v_next_of_status := case v_ticket.status
     when '접수' then '처리중'
