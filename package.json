@@ -2,6 +2,7 @@
   "dependencies": {
     "imapflow": "2.1.0",
     "mailparser": "3.9.29",
+    "pdf-parse": "2.4.5",
     "read-excel-file": "5.8.6"
   }
 }

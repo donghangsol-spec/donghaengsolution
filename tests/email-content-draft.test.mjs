@@ -19,4 +19,12 @@ assert.equal((await extractAttachment({filename:'옛거래.xls', content:Buffer.
 const raw=Buffer.from('From: synthetic@example.com\r\nSubject: Test\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nReview only');
 assert.equal((await extractMailDraft(raw)).text,'Review only');
 assert.equal((await extractMailDraft(Buffer.alloc(6*1024*1024+1))).status,'size_limit');
+
+const pdfBuffer=Buffer.from('JVBERi0xLjQKMSAwIG9iaiA8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4gZW5kb2JqCjIgMCBvYmogPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4gZW5kb2JqCjMgMCBvYmogPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNSAwIFIgPj4gZW5kb2JqCjQgMCBvYmogPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+IGVuZG9iago1IDAgb2JqIDw8IC9MZW5ndGggNDYgPj4gc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MTIgVGQgKEhlbGxvIFBERiBXb3JsZCkgVGogRVQKZW5kc3RyZWFtIGVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyIDw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQwNwolJUVPRg==','base64');
+const pdfResult=await extractAttachment({filename:'공지.pdf',content:pdfBuffer});
+assert.equal(pdfResult.status,'pdf_text');
+assert.match(pdfResult.text,/Hello PDF World/);
+const badPdf=await extractAttachment({filename:'broken.pdf',content:Buffer.from('%PDF-1.4 not a real pdf')});
+assert.equal(badPdf.status,'parse_failed');
+
 console.log('Content draft extraction checks passed');
