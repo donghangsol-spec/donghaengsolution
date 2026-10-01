@@ -40,3 +40,21 @@
 4. 배포 후 `/community`에서 운영자로 로그인해 첫 공지 작성
 
 첨부파일은 공개 버킷 `community-files`(파일당 20MB)에 저장되므로 개인정보가 담긴 파일은 올리지 않습니다.
+
+## 새 댓글 메일 알림
+
+회원이 댓글·답글을 달면 운영자에게 메일이 갑니다 (운영자 본인 댓글은 제외).
+
+- 흐름: 댓글 등록 → 브라우저가 `/api/community-notify` 호출 → 작성자 본인 토큰으로
+  `community_claim_comment_notification` (댓글당 한 번, 등록 후 10분 이내만) → Resend 발송
+- 발송 실패 시 `community_release_comment_notification`으로 되돌려 다시 보낼 수 있음
+- 받는 주소는 브라우저에 노출되지 않고 Vercel 환경변수에만 둡니다.
+
+| Vercel 환경변수 | 내용 |
+|---|---|
+| `COMMUNITY_NOTIFY_TO` | 알림 받을 주소 (쉼표로 여러 개). 없으면 `CONTACT_TO_EMAIL` 사용 |
+| `RESEND_API_KEY` | 기존 값 사용 |
+| `CONTACT_FROM_EMAIL` | 보내는 주소 (기존 값, 없으면 `noreply@donghangsolution.co.kr`) |
+
+적용: `supabase/migrations/20261001170000_community_comment_notifications.sql` 실행 →
+확인용 `supabase/tests/community_comment_notify_smoke.sql` → `community_comment_notify_smoke: ok`
