@@ -1,11 +1,13 @@
 import { simpleParser } from 'mailparser';
 import readXlsxFile from 'read-excel-file/node';
+import { PDFParse } from 'pdf-parse';
 
 const MAX_MESSAGE = 6 * 1024 * 1024;
 const MAX_ATTACHMENT = 3 * 1024 * 1024;
 const MAX_ROWS = 100;
 const MAX_CELLS = 20;
 const MAX_TEXT = 4000;
+const MAX_PDF_PAGES = 20;
 
 function cell(value) {
   if (value && typeof value === 'object') value = value.text ?? value.result ?? value.toString?.() ?? '';
@@ -57,6 +59,8 @@ export async function extractAttachment(attachment) {
     } else if (extension === 'xlsx') {
       rows = await readXlsxFile(bytes);
       if (rows.length > MAX_ROWS + 1) rows = rows.slice(0, MAX_ROWS + 1);
+    } else if (extension === 'pdf') {
+      return await extractPdfAttachment(name, bytes);
     } else {
       return { name, status: extension === 'xls' ? 'legacy_xls_unsupported' : 'unsupported', rows: [] };
     }
@@ -64,6 +68,27 @@ export async function extractAttachment(attachment) {
     return { name, status: 'preview', rows: preview, truncated: rows.length > MAX_ROWS };
   } catch {
     return { name, status: 'parse_failed', rows: [] };
+  }
+}
+
+async function extractPdfAttachment(name, bytes) {
+  let parser;
+  try {
+    parser = new PDFParse({ data: bytes });
+    const result = await parser.getText({ first: MAX_PDF_PAGES, pageJoiner: '\n' });
+    const text = String(result.text || '').trim();
+    if (!text) return { name, status: 'pdf_no_text', rows: [] };
+    return {
+      name,
+      status: 'pdf_text',
+      rows: [],
+      text: text.slice(0, MAX_TEXT),
+      truncated: text.length > MAX_TEXT || (result.total || 0) > MAX_PDF_PAGES,
+    };
+  } catch {
+    return { name, status: 'parse_failed', rows: [] };
+  } finally {
+    await parser?.destroy?.().catch(() => {});
   }
 }
 

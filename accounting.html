@@ -92,6 +92,50 @@ function emailTransactionMatches(message,draft){
   }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,3);
   return {blocked:false,rows};
 }
+const attachmentStatusLabels={preview:'미리보기',pdf_text:'PDF 텍스트 추출됨',pdf_no_text:'PDF에서 텍스트를 찾을 수 없음(스캔본 추정)',size_limit:'파일 용량 초과',unsupported:'지원하지 않는 형식',legacy_xls_unsupported:'구형 xls 미지원(xlsx로 저장 후 재첨부)',parse_failed:'읽기 실패'};
+function attachmentStatusLabel(status){return attachmentStatusLabels[status]||status}
+function parseAttachmentRows(rows){
+  if(!rows||rows.length<2)throw new Error('헤더와 거래 한 줄 이상이 필요합니다.');
+  const h=rows[0].map(v=>String(v??'').replace(/\s/g,'')),find=a=>h.findIndex(v=>a.includes(v)),
+    di=find(['거래일','일자','날짜']),de=find(['적요','내용','거래내용']),ii=find(['입금','수입','입금액']),oi=find(['출금','지출','출금액']);
+  if([di,de,ii,oi].some(i=>i<0)||new Set([di,de,ii,oi]).size!==4)throw new Error('거래일, 적요, 입금, 출금 헤더가 필요합니다.');
+  return rows.slice(1).filter(c=>c.some(v=>String(v??'').trim())).map((c,i)=>{
+    const line=i+2;
+    const norm=v=>String(v??'').trim();
+    let date=norm(c[di]).replace(/[./]/g,'-');
+    if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(date)){const [y,mo,da]=date.split('-');date=y+'-'+mo.padStart(2,'0')+'-'+da.padStart(2,'0')}
+    const desc=norm(c[de]);
+    const parseAmount=v=>{const s=norm(v).replace(/,/g,'');if(!s)return 0;if(!/^\d+(?:\.\d{1,2})?$/.test(s))throw new Error(line+'행 금액은 0 이상의 숫자여야 합니다.');const n=Number(s);if(!Number.isFinite(n)||!Number.isSafeInteger(n*100))throw new Error(line+'행 금액이 너무 큽니다.');return n};
+    const inc=parseAmount(c[ii]),out=parseAmount(c[oi]);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date)throw new Error(line+'행 날짜를 YYYY-MM-DD(또는 YYYY.MM.DD)로 입력해 주세요.');
+    if(!desc)throw new Error(line+'행 적요를 입력해 주세요.');
+    if((inc>0)===(out>0))throw new Error(line+'행 입금 또는 출금 중 하나만 0보다 커야 합니다.');
+    return classify({id:'MAIL-'+Date.now()+'-'+i,date,desc,inc,out})
+  })
+}
+let activeDraftAttachments=[];
+async function importAttachmentRows(messageId,attachmentIndex,button){
+  const att=activeDraftAttachments[attachmentIndex];if(!att){alert('첨부파일 정보를 찾을 수 없습니다. 초안을 다시 열어주세요.');return}
+  let rows;
+  try{rows=parseAttachmentRows(att.rows)}catch(error){alert(error.message||'첨부파일 내용을 거래로 변환할 수 없습니다.');return}
+  if(!rows.length){alert('가져올 거래 행이 없습니다.');return}
+  if(!confirm(rows.length+'건을 거래내역에 가져옵니다. 모두 검토 대상(AI초안/검토필요/보완요청) 상태로 들어가며 자동으로 승인되지 않습니다. 계속할까요?'))return;
+  if(!session||!cloudCompanyId){alert('로그인과 사업장 연결이 필요합니다.');return}
+  button.disabled=true;const originalLabel=button.textContent;button.textContent='가져오는 중...';
+  try{
+    const payload=rows.map(x=>({company_id:cloudCompanyId,external_id:x.id,transaction_date:x.date,description:x.desc,amount_in:x.inc,amount_out:x.out,account_code:x.code==='-'?null:x.code,account_name:x.name==='미분류'?null:x.name,confidence:x.confidence,status:x.status}));
+    const {data,error}=await sb.from('transactions').insert(payload).select();
+    if(error)throw error;
+    tx.push(...data.map(mapDbTx));render();
+    const {error:rpcError}=await sb.rpc('mark_email_intake_imported',{p_message_id:messageId});
+    if(rpcError)console.error('mark_email_intake_imported failed',rpcError);
+    button.textContent='가져오기 완료 ('+data.length+'건)';
+    await loadEmailIntake();
+  }catch(error){
+    alert(error.message||'거래 가져오기에 실패했습니다.');
+    button.disabled=false;button.textContent=originalLabel;
+  }
+}
 function renderEmailMatches(message,draft){
   const result=emailTransactionMatches(message,draft);
   if(result.blocked)return '<div class="matchbox"><div class="match-title">거래 자동 매칭</div><div class="blocked-match">'+esc(result.reason)+'</div></div>';
@@ -110,8 +154,20 @@ $('#emailIntakeBody').onclick=async(event)=>{
   if(draftResult.error||messageResult.error){detail.textContent='초안 또는 거래 후보를 불러올 수 없습니다.';return}
   const data=draftResult.data,message=messageResult.data;
   if(!data||!message){detail.textContent='본문 초안이 없습니다. 수집 연결 또는 처리 상태를 확인하세요.';return}
-  const parts=(data.attachment_previews||[]).map(a=>'<h4>'+esc(a.name||'첨부파일')+' · '+esc(a.status)+'</h4>'+(a.rows?.length?'<div class="tablewrap"><table class="table">'+a.rows.map(row=>'<tr>'+row.map(value=>'<td>'+esc(value)+'</td>').join('')+'</tr>').join('')+'</table></div>':''));
+  activeDraftAttachments=data.attachment_previews||[];
+  const canImport=['owner','admin','reviewer','staff'].includes(cloudRole);
+  const parts=activeDraftAttachments.map((a,idx)=>{
+    let body='';
+    if(a.rows?.length)body+='<div class="tablewrap"><table class="table">'+a.rows.map(row=>'<tr>'+row.map(value=>'<td>'+esc(value)+'</td>').join('')+'</tr>').join('')+'</table></div>';
+    if(a.text)body+='<pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.text)+(a.truncated?'\n…(일부만 표시)':'')+'</pre>';
+    const importBtn=(a.status==='preview'&&a.rows?.length&&canImport)?' <button class="btn primary attachment-import" data-msg="'+esc(message.id)+'" data-idx="'+idx+'">가져오기</button>':'';
+    return '<h4>'+esc(a.name||'첨부파일')+' · '+esc(attachmentStatusLabel(a.status))+importBtn+'</h4>'+body;
+  });
   detail.innerHTML='<h3>메일 검토 초안</h3><p class="muted">상태: '+esc(data.status)+(data.truncated?' · 일부만 표시':'')+' · 원본과 대조 후 처리하세요.</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(data.text_preview||'본문 없음')+'</pre>'+parts.join('')+renderEmailMatches(message,data);
+};
+$('#emailDraftDetail').onclick=(event)=>{
+  const button=event.target.closest('.attachment-import');if(!button)return;
+  importAttachmentRows(button.dataset.msg,Number(button.dataset.idx),button);
 };
 $('#reloadEmailIntake').onclick=loadEmailIntake;
 $('#collectEmailIntake').onclick=async()=>{
