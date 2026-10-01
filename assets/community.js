@@ -492,6 +492,21 @@
     await initComments(sb, viewer, post);
   }
 
+  // 운영자에게 새 댓글 메일 알림 (실패해도 댓글 등록에는 영향 없음)
+  async function notifyComment(sb, commentId) {
+    try {
+      const { data } = await sb.auth.getSession();
+      const token = data && data.session && data.session.access_token;
+      if (!token || !commentId) return;
+      await fetch('/api/community-notify', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ comment_id: commentId }),
+      });
+    } catch (_) { /* 알림 실패는 조용히 넘긴다 */ }
+  }
+
   async function initComments(sb, viewer, post) {
     const list = $('#cmComments');
     const count = $('#cmCommentCount');
@@ -518,9 +533,10 @@
         if (!body) { msg.textContent = '내용을 입력해 주세요.'; return; }
         button.disabled = true;
         msg.textContent = '';
-        const { error } = await sb.rpc('community_add_comment', { p_post_id: post.id, p_parent_id: parentId, p_body: body });
+        const { data: commentId, error } = await sb.rpc('community_add_comment', { p_post_id: post.id, p_parent_id: parentId, p_body: body });
         button.disabled = false;
         if (error) { msg.textContent = friendlyError(error); return; }
+        if (!viewer.is_admin) notifyComment(sb, commentId);
         textarea.value = '';
         counter.textContent = '0 / 500';
         onDone();
