@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f172a">
+<title>동행솔루션 · 최고관리자</title>
+<style>
+:root{--bg:#f1f5f9;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--nav:#0f172a;--accent:#0f766e;--ok:#166534;--warn:#b45309;--bad:#b91c1c}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}
+.auth{position:fixed;inset:0;background:rgba(15,23,42,.96);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.authbox{width:min(420px,100%);background:#fff;border-radius:18px;padding:26px}
+.authbox input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;margin:10px 0}
+.wrap{max-width:1100px;margin:0 auto;padding:22px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.brand{font-weight:900;font-size:21px}
+.brand small{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-top:4px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{border:0;background:#e2e8f0;color:#0f172a;padding:9px 14px;border-radius:999px;font-weight:800;cursor:pointer;font-size:13px}
+.tab.active{background:var(--nav);color:#fff}
+.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;margin-bottom:13px;box-shadow:0 2px 10px rgba(15,23,42,.03)}
+.btn{border:0;border-radius:8px;padding:8px 11px;font-weight:800;cursor:pointer}
+.primary{background:var(--accent);color:#fff}
+.secondary{background:#e2e8f0;color:#0f172a}
+.danger{background:#fee2e2;color:#991b1b}
+.muted{font-size:12px;color:var(--muted)}
+.table{width:100%;border-collapse:collapse;font-size:12px}
+.table th,.table td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.table th{background:#f8fafc}
+.badge{display:inline-block;padding:4px 7px;border-radius:999px;font-weight:800;font-size:11px;background:#e2e8f0}
+.badge.대기{background:#fff7ed;color:#9a3412}
+.badge.승인됨{background:#ecfdf5;color:#065f46}
+.badge.반려됨{background:#fef2f2;color:#991b1b}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.tablewrap{overflow:auto}
+.sectionTitle{font-size:16px;font-weight:900;margin-bottom:8px}
+.toolbar{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.notice{padding:12px;border-radius:9px;font-size:13px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+input.inline{padding:6px;border:1px solid var(--line);border-radius:6px}
+</style></head>
+<body>
+<div id="auth" class="auth"><div class="authbox">
+  <div class="brand" style="margin-bottom:10px">동행솔루션<small>최고관리자</small></div>
+  <h2 style="margin:0 0 4px">최고관리자 로그인</h2>
+  <p class="muted">최고관리자로 등록된 계정만 이용할 수 있습니다.</p>
+  <input id="email" type="email" autocomplete="email" placeholder="name@example.com">
+  <input id="password" type="password" autocomplete="current-password" minlength="8" placeholder="비밀번호">
+  <button id="login" class="btn primary" style="width:100%">로그인</button>
+  <div id="authMsg" class="muted" role="status" aria-live="polite" style="margin-top:8px"></div>
+</div></div>
+
+<div id="deniedView" hidden style="padding:40px;text-align:center">
+  <div class="notice" style="max-width:480px;margin:0 auto">이 계정은 최고관리자 권한이 없습니다.
+    대표님 계정으로 로그인하거나, Supabase SQL Editor에서 platform_admins 표에
+    계정을 등록해 주세요.</div>
+  <button id="deniedLogout" class="btn secondary" style="margin-top:16px">로그아웃</button>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <div class="top">
+    <div class="brand">동행솔루션<small>최고관리자 콘솔</small></div>
+    <div class="actions"><a href="./next.html" class="btn secondary" style="text-decoration:none">업무 화면으로</a><button id="logout" class="btn secondary">로그아웃</button></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-view="signups">가입 신청</button>
+    <button class="tab" data-view="companies">전체 사업장</button>
+  </div>
+
+  <section id="view-signups">
+    <div class="card">
+      <div class="toolbar">
+        <div class="sectionTitle">가입 신청 목록</div>
+        <div class="actions">
+          <select id="statusFilter" class="btn secondary">
+            <option value="대기" selected>대기중</option>
+            <option value="승인됨">승인됨</option>
+            <option value="반려됨">반려됨</option>
+            <option value="">전체</option>
+          </select>
+          <button id="refreshSignups" class="btn secondary">새로고침</button>
+        </div>
+      </div>
+      <div class="tablewrap"><table class="table">
+        <thead><tr><th>신청일</th><th>이메일</th><th>인증</th><th>사업자등록번호</th><th>희망 사업장명</th><th>연락처</th><th>상태</th><th>작업</th></tr></thead>
+        <tbody id="signupBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="view-companies" hidden>
+    <div class="card">
+      <div class="toolbar">
+        <div class="sectionTitle">전체 사업장 (조직 전체)</div>
+        <div class="actions">
+          <input id="companySearch" class="inline" placeholder="사업장명 · 조직명 · 사업자등록번호 검색">
+          <button id="searchCompanies" class="btn secondary">검색</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-bottom:8px">사업장을 조직별로 일괄 조회합니다. 새 사업장 등록·수정은 각 사업장의
+        업무 화면(사업장 메뉴)에서 진행하고, 신규 가입자 연결은 "가입 신청" 탭을 이용해 주세요.</div>
+      <div class="tablewrap"><table class="table">
+        <thead><tr><th>조직</th><th>사업장</th><th>사업자등록번호</th><th>회계유형</th><th>유형</th><th>상태</th></tr></thead>
+        <tbody id="companyBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+</div>
+
+<script src="/api/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script>
+const cfg=window.__DONGHAENG_CONFIG__||{};if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)throw new Error('Supabase 공개 설정이 없습니다. Vercel 환경변수를 확인하세요.');
+const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let session=null;
+
+$('#login').onclick=async()=>{
+  const email=$('#email').value.trim(),password=$('#password').value;
+  if(!email||!password){$('#authMsg').textContent='이메일과 비밀번호를 입력해 주세요.';return}
+  $('#authMsg').textContent='로그인하는 중입니다...';
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){$('#authMsg').textContent='로그인 실패: '+error.message;return}
+  await boot();
+};
+$('#deniedLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+$('#logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const view=t.dataset.view;
+  $('#view-signups').hidden=view!=='signups';
+  $('#view-companies').hidden=view!=='companies';
+  if(view==='companies')loadCompanies();
+});
+
+async function boot(){
+  const {data:{session:s}}=await sb.auth.getSession();
+  session=s;
+  if(!s){return}
+  const {data:isAdmin,error}=await sb.rpc('is_platform_admin');
+  if(error||!isAdmin){
+    $('#auth').hidden=true;$('#deniedView').hidden=false;
+    return;
+  }
+  $('#auth').hidden=true;$('#app').hidden=false;
+  await loadSignups();
+}
+
+function statusBadge(status){return '<span class="badge '+esc(status)+'">'+esc(status)+'</span>'}
+
+async function loadSignups(){
+  const status=$('#statusFilter').value||null;
+  const {data,error}=await sb.rpc('platform_list_signups',{p_status:status});
+  if(error){$('#signupBody').innerHTML='<tr><td colspan="8">조회 실패: '+esc(error.message)+'</td></tr>';return}
+  $('#signupBody').innerHTML=(data||[]).map(r=>{
+    const actions=r.status==='대기'
+      ? '<div class="actions">'
+        +'<button class="btn primary" onclick="approveExisting(\''+r.id+'\')">기존 사업장 연결</button>'
+        +'<button class="btn secondary" onclick="approveNew(\''+r.id+'\',\''+esc(r.requested_company_name||'')+'\')">새 사업장 생성</button>'
+        +'<button class="btn danger" onclick="rejectSignup(\''+r.id+'\')">반려</button>'
+        +'</div>'
+      : (r.reject_reason ? esc(r.reject_reason) : '-');
+    return '<tr><td>'+new Date(r.created_at).toLocaleString('ko-KR')+'</td><td>'+esc(r.email)+'</td>'
+      +'<td>'+(r.email_confirmed?'완료':'미완료')+'</td><td>'+esc(r.business_registration_number)+'</td>'
+      +'<td>'+esc(r.requested_company_name||'-')+'</td><td>'+esc(r.contact_phone||'-')+'</td>'
+      +'<td>'+statusBadge(r.status)+'</td><td>'+actions+'</td></tr>';
+  }).join('')||'<tr><td colspan="8">신청 내역이 없습니다.</td></tr>';
+}
+$('#refreshSignups').onclick=loadSignups;
+$('#statusFilter').onchange=loadSignups;
+
+async function approveExisting(requestId){
+  const search=prompt('연결할 사업장을 검색할 키워드(사업장명·조직명·사업자등록번호)를 입력해 주세요.');
+  if(search===null)return;
+  const {data,error}=await sb.rpc('platform_list_companies',{p_search:search.trim()||null});
+  if(error)return alert('사업장 검색 실패: '+error.message);
+  if(!data||!data.length)return alert('검색 결과가 없습니다.');
+  const list=data.map((c,i)=>(i+1)+'. '+c.organization_name+' / '+c.name+' ('+(c.business_registration_number||'-')+')').join('\n');
+  const pick=prompt('연결할 사업장 번호를 입력해 주세요.\n'+list);
+  if(pick===null)return;
+  const idx=Number(pick)-1;
+  if(!Number.isInteger(idx)||!data[idx])return alert('올바른 번호를 입력해 주세요.');
+  const role=prompt('부여할 권한을 입력해 주세요. (owner/admin/reviewer/staff)','owner');
+  if(role===null)return;
+  const {error:approveError}=await sb.rpc('platform_approve_signup_existing',{p_request_id:requestId,p_company_id:data[idx].id,p_role:role.trim()||'owner'});
+  if(approveError)return alert('승인 실패: '+approveError.message);
+  alert('승인되었습니다.');
+  await loadSignups();
+}
+
+async function approveNew(requestId,suggestedName){
+  const orgName=prompt('새로 만들 조직명을 입력해 주세요.',suggestedName||'');
+  if(orgName===null)return;
+  const companyName=prompt('새로 만들 사업장명을 입력해 주세요.',suggestedName||orgName||'');
+  if(companyName===null)return;
+  const accountType=prompt('회계유형을 입력해 주세요. (비영리/영리)','비영리');
+  if(accountType===null)return;
+  const companyType=prompt('사업장 유형을 입력해 주세요. (장기요양기관/사회복지시설/기타)','장기요양기관');
+  if(companyType===null)return;
+  const {error}=await sb.rpc('platform_approve_signup_new',{
+    p_request_id:requestId,p_organization_name:orgName.trim(),p_company_name:companyName.trim(),
+    p_account_type:accountType.trim()||'비영리',p_company_type:companyType.trim()||'장기요양기관'
+  });
+  if(error)return alert('승인 실패: '+error.message);
+  alert('새 사업장이 생성되고 연결되었습니다.');
+  await loadSignups();
+}
+
+async function rejectSignup(requestId){
+  const reason=prompt('반려 사유를 입력해 주세요.');
+  if(reason===null)return;
+  const {error}=await sb.rpc('platform_reject_signup',{p_request_id:requestId,p_reason:reason.trim()||'사유 미기재'});
+  if(error)return alert('반려 실패: '+error.message);
+  await loadSignups();
+}
+
+async function loadCompanies(){
+  const search=$('#companySearch').value.trim()||null;
+  const {data,error}=await sb.rpc('platform_list_companies',{p_search:search});
+  if(error){$('#companyBody').innerHTML='<tr><td colspan="6">조회 실패: '+esc(error.message)+'</td></tr>';return}
+  $('#companyBody').innerHTML=(data||[]).map(c=>
+    '<tr><td>'+esc(c.organization_name)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.business_registration_number||'-')+'</td>'
+    +'<td>'+esc(c.account_type||'-')+'</td><td>'+esc(c.company_type||'-')+'</td><td>'+(c.is_active?'활성':'비활성')+'</td></tr>'
+  ).join('')||'<tr><td colspan="6">조회된 사업장이 없습니다.</td></tr>';
+}
+$('#searchCompanies').onclick=loadCompanies;
+
+(async function init(){
+  const {data:{session:s}}=await sb.auth.getSession();
+  if(s){await boot()}
+})();
+</script>
+</body>
+</html>

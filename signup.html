@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f172a">
+<title>동행솔루션 · 사업장 가입 신청</title>
+<style>
+:root{--bg:#f1f5f9;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--nav:#0f172a;--accent:#0f766e;--bad:#b91c1c}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}button,input,select{font:inherit}
+.box{width:min(460px,100%);background:#fff;border-radius:18px;padding:30px;box-shadow:0 2px 16px rgba(15,23,42,.06)}
+.brand{font-weight:900;font-size:21px;color:#0f172a;margin-bottom:4px}
+.brand small{display:block;color:var(--muted);font-size:11px;margin-top:5px;font-weight:600}
+h2{margin:18px 0 4px;font-size:17px}
+.muted{font-size:12px;color:var(--muted);line-height:1.6}
+label{display:block;font-size:12px;font-weight:800;margin-top:12px}
+input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;margin-top:5px}
+.btn{border:0;border-radius:8px;padding:11px;font-weight:800;cursor:pointer;width:100%;margin-top:16px}
+.primary{background:var(--accent);color:#fff}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.notice{margin-top:12px;padding:10px;border-radius:9px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+.bad{background:#fef2f2;border:1px solid #fecaca;color:var(--bad)}
+a{color:var(--accent)}
+</style></head>
+<body>
+<div class="box">
+  <div class="brand">동행솔루션<small>사업장 가입 신청</small></div>
+  <h2>이메일로 가입 신청하기</h2>
+  <p class="muted">가입 신청 후 이메일 인증을 완료하면, 최고관리자가 사업자등록번호를 확인하여
+    기존 사업장에 연결하거나 새 사업장을 만들어 연결해 드립니다. 승인 전까지는 로그인은 되지만
+    업무 화면은 이용하실 수 없습니다.</p>
+
+  <div id="formView">
+    <label>이메일<input id="email" type="email" autocomplete="email" placeholder="name@example.com"></label>
+    <label>비밀번호 (8자 이상)<input id="password" type="password" autocomplete="new-password" minlength="8" placeholder="비밀번호"></label>
+    <label>비밀번호 확인<input id="passwordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="비밀번호 확인"></label>
+    <label>사업자등록번호<input id="brn" inputmode="numeric" placeholder="000-00-00000"></label>
+    <label>사업장명 (희망)<input id="companyName" placeholder="예: 동행솔루션 요양센터"></label>
+    <label>연락처 (선택)<input id="phone" type="tel" placeholder="010-0000-0000"></label>
+    <button id="submit" class="btn primary">가입 신청하기</button>
+    <div id="msg" class="muted" role="status" aria-live="polite" style="margin-top:8px"></div>
+    <p class="muted" style="margin-top:14px">이미 계정이 있으신가요? <a href="./next.html">로그인하러 가기</a></p>
+  </div>
+
+  <div id="doneView" hidden>
+    <div class="notice ok">가입 신청이 접수되었습니다. 이메일로 전송된 인증 링크를 눌러 이메일 인증을
+      완료해 주세요. 이후 최고관리자가 사업장을 연결하면 자동으로 이용하실 수 있습니다.</div>
+    <p class="muted" style="margin-top:14px"><a href="./next.html">로그인 화면으로 이동</a></p>
+  </div>
+</div>
+
+<script src="/api/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script>
+const cfg=window.__DONGHAENG_CONFIG__||{};if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)throw new Error('Supabase 공개 설정이 없습니다. Vercel 환경변수를 확인하세요.');
+const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
+const $=s=>document.querySelector(s);
+$('#submit').onclick=async()=>{
+  const email=$('#email').value.trim(),password=$('#password').value,passwordConfirm=$('#passwordConfirm').value,
+    brn=$('#brn').value.trim(),companyName=$('#companyName').value.trim(),phone=$('#phone').value.trim();
+  const msg=$('#msg');
+  if(!email){msg.textContent='이메일을 입력해 주세요.';return}
+  if(password.length<8){msg.textContent='비밀번호는 8자 이상 입력해 주세요.';return}
+  if(password!==passwordConfirm){msg.textContent='비밀번호가 서로 일치하지 않습니다.';return}
+  if(!brn||brn.replace(/[^0-9]/g,'').length<10){msg.textContent='사업자등록번호를 정확히 입력해 주세요. (숫자 10자리)';return}
+  $('#submit').disabled=true;msg.textContent='신청을 접수하는 중입니다...';
+  const {error}=await sb.auth.signUp({
+    email,password,
+    options:{data:{business_registration_number:brn,company_name:companyName||null,phone:phone||null}}
+  });
+  $('#submit').disabled=false;
+  if(error){msg.textContent='신청 실패: '+error.message;return}
+  $('#formView').hidden=true;$('#doneView').hidden=false;
+};
+</script>
+</body>
+</html>
