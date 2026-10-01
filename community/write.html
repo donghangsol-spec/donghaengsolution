@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#13233e">
+<title>글쓰기 | 복지커뮤니티 | 동행솔루션</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="복지커뮤니티 글쓰기">
+<link rel="canonical" href="https://donghangsolution.co.kr/community/write">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/community.css">
+<script src="/assets/site.js" defer></script>
+<script src="/api/config.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js" defer></script>
+<script src="/assets/community.js" defer></script>
+</head>
+<body data-cm-page="write">
+<a class="skip" href="#main">본문 바로가기</a>
+<div class="topline">
+<div class="wrap">복지 현장의 든든한 동행<span>
+<a href="tel:0426733338">042-673-3338</a>
+</span>
+</div>
+</div>
+<header>
+<div class="wrap header-inner">
+<a class="brand" href="/" aria-label="동행솔루션 홈">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<button class="menu-toggle" aria-expanded="false" aria-controls="navigation" aria-label="메뉴 열기">☰</button>
+<nav id="navigation" aria-label="주 메뉴">
+<a href="/#services">서비스 소개</a>
+<a href="/community" aria-current="page">복지커뮤니티</a>
+<a href="/support">고객지원</a>
+<a href="/contact">상담문의</a>
+<span id="cmAuth"><a href="/app">로그인 <span aria-hidden="true">↗</span></a></span>
+<a class="button navy small" href="/app?view=insurance">업무요청</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<div class="cm-narrow">
+<div class="cm-topbar">
+<div class="breadcrumb"><a href="/">홈</a> / <a href="/community">복지커뮤니티 게시판</a> / 글쓰기</div>
+<a class="text-link" href="/community">← 목록으로</a>
+</div>
+<h1 id="cmWriteTitle" style="font-size:32px;letter-spacing:-1.2px;margin:0 0 24px;color:#13233e">새 글 작성</h1>
+<div data-cm-root>
+<form id="cmForm" class="cm-form" hidden novalidate>
+<fieldset class="cm-field">
+<legend>분류 <span class="cm-muted">· <span id="cmTemplateName"></span></span></legend>
+<div id="cmCategories" class="cm-checks"></div>
+</fieldset>
+<div class="cm-field">
+<label for="cmTitle">제목 <span class="cm-req">*</span></label>
+<input id="cmTitle" name="title" type="text" maxlength="120" required>
+</div>
+
+<div id="cmResourceFields" class="cm-template cm-template-resource" hidden>
+<span class="eyebrow">자료 양식</span>
+<div class="cm-field">
+<label for="cmSummary">한 줄 요약 <span class="cm-req">*</span></label>
+<input id="cmSummary" name="summary" type="text" maxlength="200" placeholder="이 자료가 무엇을 도와주는지 한 문장으로">
+</div>
+<fieldset class="cm-field">
+<legend>대상 기관</legend>
+<div id="cmAudiences" class="cm-checks"></div>
+</fieldset>
+<div class="cm-grid2">
+<div class="cm-field"><label for="cmRefDate">기준일</label><input id="cmRefDate" name="reference_date" type="date"></div>
+<div class="cm-field"><label for="cmResType">자료 유형</label><select id="cmResType" name="resource_type"></select></div>
+</div>
+<div class="cm-field">
+<span class="cm-field-label">핵심 내용 <span class="cm-muted">· 한 줄씩, 3~5개 권장 (최대 8개)</span></span>
+<div id="cmPoints"></div>
+<button id="cmAddPoint" type="button" class="cm-add">+ 항목 추가</button>
+</div>
+<div class="cm-field">
+<label for="cmSource">출처 · 참고</label>
+<input id="cmSource" name="source_ref" type="text" maxlength="300" placeholder="관련 법령·지침명 또는 링크">
+</div>
+</div>
+
+<div id="cmNoticeFields" class="cm-template cm-template-notice" hidden>
+<span class="eyebrow">공지 양식</span>
+<div class="cm-grid2">
+<div class="cm-field"><label for="cmPeriod">일시 · 기간</label><input id="cmPeriod" name="event_period" type="text" maxlength="100" placeholder="예: 10.6(월) ~ 10.10(금)"></div>
+<div class="cm-field"><label for="cmTarget">대상</label><input id="cmTarget" name="notice_target" type="text" maxlength="100" placeholder="예: 전체 회원 기관"></div>
+</div>
+<div class="cm-field"><label for="cmContact">문의처</label><input id="cmContact" name="contact" type="text" maxlength="100"></div>
+</div>
+
+<div class="cm-field">
+<label id="cmBodyLabel" for="cmBody">본문</label>
+<textarea id="cmBody" name="body" maxlength="20000" placeholder="문단 사이는 빈 줄로 나눠 주세요."></textarea>
+</div>
+
+<div id="cmFilesField" class="cm-field" hidden>
+<span class="cm-field-label">첨부파일 <span class="cm-muted">· 운영자만, 파일당 20MB · 최대 10개</span></span>
+<label class="cm-drop">
+<span>파일을 <strong style="color:#c84c18">선택</strong>하세요</span>
+<span class="cm-muted">PDF, HWP, XLSX, DOCX, 이미지</span>
+<input id="cmFiles" type="file" multiple accept=".pdf,.hwp,.hwpx,.xlsx,.xls,.docx,.doc,.pptx,.png,.jpg,.jpeg,.webp,.zip">
+</label>
+<p id="cmFileStatus" class="cm-error" role="status"></p>
+<ul id="cmFileList" class="cm-file-list"></ul>
+</div>
+
+<div class="cm-toggles">
+<label id="cmPinField" class="cm-toggle" hidden><input name="is_pinned" type="checkbox"><span><strong>상단 고정</strong>목록 맨 위에 표시</span></label>
+<label class="cm-toggle"><input name="allow_comments" type="checkbox" checked><span><strong>댓글 허용</strong>회원이 댓글로 의견을 남김</span></label>
+</div>
+
+<div class="cm-submitbar">
+<p id="cmFormMsg" class="cm-error" role="status"></p>
+<a class="button ghost" href="/community">취소</a>
+<button id="cmSubmit" class="button orange" type="submit">등록하기</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</main>
+<footer>
+<div class="wrap footer-grid">
+<div>
+<a class="brand" href="/">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<p>복지 현장에 필요한 전문성,<br>가장 가까운 곳에서 함께합니다.</p>
+</div>
+<div>
+<strong>CONTACT</strong>
+<p>
+<a href="tel:0426733338">042-673-3338</a>
+<br>
+<a href="mailto:donghangsol@naver.com">donghangsol@naver.com</a>
+<br>대전광역시 서구 월평로 27 201호<br>
+<a href="https://donghangsolution.co.kr">donghangsolution.co.kr</a>
+</p>
+</div>
+<div>
+<strong>QUICK LINKS</strong>
+<p>
+<a href="/support">고객지원</a>
+<br>
+<a href="/contact">상담신청</a>
+<br>
+<a href="/app">내 업무현황 · 로그인</a>
+<br>
+<a href="https://bokjiedu-web.vercel.app/?from=donghaeng" target="_blank" rel="noopener">연계기관 · 복지에듀 ↗</a>
+<br>
+<a href="https://sparkling-taffy-5c0f66.netlify.app" target="_blank" rel="noopener">연계기관 · 업무일지(복지사랑·요양사랑) ↗</a>
+</p>
+</div>
+</div>
+<div class="wrap copyright">© 2026 동행솔루션. All rights reserved.</div>
+</footer>
+</body>
+</html>

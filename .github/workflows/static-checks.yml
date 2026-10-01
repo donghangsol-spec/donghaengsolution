@@ -26,3 +26,4 @@ jobs:
       - run: node tests/email-intake-collect.test.mjs
       - run: node tests/naver-imap.test.mjs
       - run: node tests/email-content-draft.test.mjs
+      - run: node tests/community-board.test.mjs
