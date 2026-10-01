@@ -188,6 +188,12 @@ begin
     raise exception 'anon commented';
   exception when insufficient_privilege then null;
   end;
+  if has_function_privilege('anon', 'public.community_save_post(uuid, jsonb)', 'execute') then
+    raise exception 'anon can execute community_save_post';
+  end if;
+  if has_function_privilege('authenticated', 'public.community_refresh_comment_count(uuid)', 'execute') then
+    raise exception 'internal helper callable by clients';
+  end if;
 end $$;
 
 reset role;

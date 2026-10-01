@@ -32,8 +32,11 @@
 
 1. Supabase SQL Editor에서 `supabase/migrations/20261001150000_community_board.sql` 실행
    (`20261001090000_platform_admin_signup_approval.sql`이 먼저 적용되어 있어야 함)
+   이어서 `supabase/migrations/20261001160000_community_board_grants.sql` 실행
+   (Supabase 기본 권한 때문에 비로그인 사용자도 쓰기 함수를 부를 수 있던 것을 막음)
 2. 운영자 계정이 `platform_admins`에 있는지 확인
 3. 확인용: `supabase/tests/community_board_smoke.sql` 실행 → `community_board_smoke: ok` (모두 롤백됨)
+   SQL Editor에 붙여넣을 때는 GitHub의 복사 버튼을 쓰고, 마지막 줄(`rollback;`)까지 들어갔는지 확인
 4. 배포 후 `/community`에서 운영자로 로그인해 첫 공지 작성
 
 첨부파일은 공개 버킷 `community-files`(파일당 20MB)에 저장되므로 개인정보가 담긴 파일은 올리지 않습니다.
