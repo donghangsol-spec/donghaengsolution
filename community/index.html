@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#13233e">
+<title>복지커뮤니티 게시판 | 동행솔루션</title>
+<meta name="description" content="복지기관 공지사항과 실무 자료를 확인하고 댓글로 의견을 나누는 게시판입니다.">
+<link rel="canonical" href="https://donghangsolution.co.kr/community">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/community.css">
+<script src="/assets/site.js" defer></script>
+<script src="/api/config.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js" defer></script>
+<script src="/assets/community.js" defer></script>
+</head>
+<body data-cm-page="list">
+<a class="skip" href="#main">본문 바로가기</a>
+<div class="topline">
+<div class="wrap">복지 현장의 든든한 동행<span>
+<a href="tel:0426733338">042-673-3338</a>
+</span>
+</div>
+</div>
+<header>
+<div class="wrap header-inner">
+<a class="brand" href="/" aria-label="동행솔루션 홈">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<button class="menu-toggle" aria-expanded="false" aria-controls="navigation" aria-label="메뉴 열기">☰</button>
+<nav id="navigation" aria-label="주 메뉴">
+<a href="/#services">서비스 소개</a>
+<a href="/community" aria-current="page">복지커뮤니티</a>
+<a href="/support">고객지원</a>
+<a href="/contact">상담문의</a>
+<span id="cmAuth"><a href="/app">로그인 <span aria-hidden="true">↗</span></a></span>
+<a class="button navy small" href="/app?view=insurance">업무요청</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<section class="cm-hero">
+<div class="wrap">
+<div>
+<div class="breadcrumb"><a href="/">홈</a> / <a href="/services/community">복지커뮤니티</a> / 게시판</div>
+<span class="eyebrow">복지커뮤니티 게시판</span>
+<h1>함께 보고, 함께 나누는 현장 소식.</h1>
+<p>공지사항과 실무 자료를 확인하고, 댓글로 서로의 경험을 나눠 주세요.</p>
+</div>
+<div id="cmWrite"></div>
+</div>
+</section>
+<div class="wrap cm-layout">
+<section aria-labelledby="cmListTitle" data-cm-root>
+<h2 id="cmListTitle" class="cm-sr">게시글 목록</h2>
+<div class="cm-toolbar">
+<div id="cmTabs" class="cm-tabs" role="tablist" aria-label="게시판 분류"></div>
+<form id="cmSearchForm" class="cm-search" role="search">
+<label for="cmSearch" class="cm-sr">제목 검색</label>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#627083" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<input id="cmSearch" type="search" maxlength="50" placeholder="제목으로 검색">
+</form>
+</div>
+<p id="cmStatus" class="cm-sr" aria-live="polite"></p>
+<ul id="cmList" class="cm-list" aria-busy="true"><li class="cm-empty">불러오는 중입니다.</li></ul>
+<nav id="cmPager" class="cm-pager" aria-label="페이지"></nav>
+</section>
+<aside class="cm-side">
+<div class="cm-card cm-card-navy">
+<span class="eyebrow">JOIN THE TALK</span>
+<h2>로그인하고 의견을 나눠 주세요.</h2>
+<p>게시글은 누구나 볼 수 있고, 댓글은 가입 승인된 회원 기관 담당자가 쓸 수 있습니다.</p>
+<a class="button small" style="background:#fff;color:#13233e" href="/signup">회원가입 신청</a>
+</div>
+<div class="cm-card">
+<h2>많이 본 글</h2>
+<ol id="cmPopular" class="cm-popular"><li class="cm-muted">불러오는 중입니다.</li></ol>
+</div>
+<div class="cm-card cm-card-soft">
+<h2>이용 원칙</h2>
+<ul>
+<li>이용자 개인정보(성명·연락처·주민번호 등)는 올리지 않습니다.</li>
+<li>서로 존중하는 표현을 사용합니다.</li>
+<li>광고·홍보성 글과 댓글은 운영자가 숨길 수 있습니다.</li>
+</ul>
+</div>
+</aside>
+</div>
+</main>
+<footer>
+<div class="wrap footer-grid">
+<div>
+<a class="brand" href="/">
+<img src="/assets/id-logo.jpg" alt="" width="64" height="56">
+<span class="brand-copy">동행솔루션<small>DONGHAENG SOLUTION</small>
+</span>
+</a>
+<p>복지 현장에 필요한 전문성,<br>가장 가까운 곳에서 함께합니다.</p>
+</div>
+<div>
+<strong>CONTACT</strong>
+<p>
+<a href="tel:0426733338">042-673-3338</a>
+<br>
+<a href="mailto:donghangsol@naver.com">donghangsol@naver.com</a>
+<br>대전광역시 서구 월평로 27 201호<br>
+<a href="https://donghangsolution.co.kr">donghangsolution.co.kr</a>
+</p>
+</div>
+<div>
+<strong>QUICK LINKS</strong>
+<p>
+<a href="/support">고객지원</a>
+<br>
+<a href="/contact">상담신청</a>
+<br>
+<a href="/app">내 업무현황 · 로그인</a>
+<br>
+<a href="https://bokjiedu-web.vercel.app/?from=donghaeng" target="_blank" rel="noopener">연계기관 · 복지에듀 ↗</a>
+<br>
+<a href="https://sparkling-taffy-5c0f66.netlify.app" target="_blank" rel="noopener">연계기관 · 업무일지(복지사랑·요양사랑) ↗</a>
+</p>
+</div>
+</div>
+<div class="wrap copyright">© 2026 동행솔루션. All rights reserved.</div>
+</footer>
+</body>
+</html>
