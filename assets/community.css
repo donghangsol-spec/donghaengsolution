@@ -161,3 +161,23 @@
   .cm-row{padding:15px 8px}
   .cm-actions{margin-left:0}
 }
+/* 게시판 페이지는 메뉴가 한두 개 더 많아(복지커뮤니티, 로그인 이름) 좁은 화면에서 줄바꿈되지 않게 조인다 */
+#navigation>a,#cmAuth,#cmAuth>*{white-space:nowrap}
+@media(max-width:1180px){
+  .cm-auth-label{display:none}
+  #navigation{gap:20px}
+}
+@media(max-width:960px){
+  #navigation{gap:12px;font-size:13px}
+  #navigation .button.small{padding:10px 12px}
+}
+/* 860px 이하에서는 사이트의 모바일 메뉴(☰)를 조금 일찍 쓴다 */
+@media(max-width:860px){
+  .header-inner{height:74px}
+  .menu-toggle{display:block;border:1px solid var(--line);background:#fff;border-radius:5px;width:44px;height:44px;font-size:22px}
+  #navigation{display:none;position:absolute;top:74px;left:0;right:0;padding:20px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 12px 16px #13233e15;gap:0;font-size:14px}
+  #navigation.open{display:flex;flex-direction:column;align-items:stretch}
+  #navigation>a,#cmAuth{padding:9px}
+  #navigation .button.small{padding:10px 18px}
+  .cm-auth-label{display:inline}
+}
