@@ -78,8 +78,8 @@
     const cd = floor(convertedDeduction(converted));
     const taxBase = Math.max(0, converted - cd);
     const convertedTax = floor(basicTax(taxBase));
-    const incomeTax = floor(convertedTax * years / 12);
-    const localTax = floor(incomeTax / 10);
+    const incomeTax = Math.floor(floor(convertedTax * years / 12) / 10) * 10;
+    const localTax = Math.floor(incomeTax / 100) * 10;
     return { years, serviceDeduction: sd, converted, convertedDeduction: cd, taxBase, convertedTax, incomeTax, localTax, total: incomeTax + localTax };
   }
 
@@ -123,5 +123,95 @@
   }
 
 
-  root.DHSeverance = { calculate, wagePeriods, serviceYears, retirementTax, addDays };
+  // ── 월할 적립 방식 ──────────────────────────────────────────────
+  // 월별 자료 [{month:'YYYY-MM', days, hours, pay}] → 같은 달은 합산하고,
+  // 월 근로시간이 minHours 이상인 달만 포함해 세전 급여의 1/rate를 적립합니다.
+  const normMonth = v => {
+    if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * DAY)).toISOString().slice(0, 7);
+    const m = String(v || '').trim().match(/(\d{4})\s*[-./년]\s*(\d{1,2})/);
+    return m ? m[1] + '-' + m[2].padStart(2, '0') : null;
+  };
+  const toNum = v => { const n = Number(String(v ?? '').replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
+  function roundUnit(x, unit) { return Number(unit) === 1 ? Math.floor(x) : Math.round(x / unit) * unit; }
+  function mergeMonths(rows) {
+    const map = new Map();
+    for (const r of rows || []) {
+      const month = normMonth(r.month);
+      if (!month) continue;
+      const o = map.get(month) || { month, days: 0, hours: 0, pay: 0, count: 0 };
+      o.days += toNum(r.days); o.hours += toNum(r.hours); o.pay += toNum(r.pay); o.count++;
+      map.set(month, o);
+    }
+    return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
+  }
+  function serviceText(hireDate, lastWorkDate) {
+    if (parse(hireDate) == null || parse(lastWorkDate) == null) return '';
+    const s = new Date(parse(hireDate)), e = new Date(parse(lastWorkDate) + DAY);
+    let y = e.getUTCFullYear() - s.getUTCFullYear(), m = e.getUTCMonth() - s.getUTCMonth(), d = e.getUTCDate() - s.getUTCDate();
+    if (d < 0) { m--; d += new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), 0)).getUTCDate(); }
+    if (m < 0) { y--; m += 12; }
+    return y + '년 ' + m + '개월 ' + d + '일';
+  }
+  function accrual(input) {
+    const minHours = input.minHours == null ? 60 : Number(input.minHours);
+    const rate = Number(input.rate) || 12, unit = Number(input.round) || 10;
+    const months = mergeMonths(input.rows).map(x => ({ ...x, included: x.hours >= minHours }));
+    months.forEach(x => { x.amount = x.included ? roundUnit(x.pay / rate, unit) : 0; });
+    const included = months.filter(x => x.included), excluded = months.filter(x => !x.included);
+    const severance = included.reduce((s, x) => s + x.amount, 0);
+    const warnings = [];
+    let serviceDays = null, years = null;
+    const hire = parse(input.hireDate), last = parse(input.lastWorkDate);
+    if (hire != null && last != null && last >= hire) { serviceDays = (last - hire) / DAY + 1; years = serviceYears(input.hireDate, input.lastWorkDate); }
+    else warnings.push('입사일과 퇴사일(마지막 근무일)을 입력하면 근속기간과 세금이 계산됩니다.');
+    if (serviceDays != null && serviceDays < 365) warnings.push('재직기간이 1년 미만이면 법정 퇴직금 지급 의무가 없습니다.');
+    if (months.length && included.length < 12) warnings.push('기준을 충족한 달이 ' + included.length + '개월로 12개월에 못 미칩니다. 지급 대상인지 확인해 주세요.');
+    const missing = [];
+    if (serviceDays != null) {
+      const have = new Set(months.map(x => x.month));
+      const outside = months.filter(x => x.month < input.hireDate.slice(0, 7) || x.month > input.lastWorkDate.slice(0, 7));
+      if (outside.length) warnings.push('재직기간 밖의 달이 있습니다: ' + outside.map(x => x.month).join(', '));
+      let y = +input.hireDate.slice(0, 4), m = +input.hireDate.slice(5, 7);
+      const end = input.lastWorkDate.slice(0, 7);
+      for (;;) { const k = y + '-' + String(m).padStart(2, '0'); if (k > end) break; if (!have.has(k)) missing.push(k); m++; if (m > 12) { m = 1; y++; } }
+    }
+    const last3 = included.slice(-3);
+    const avg3 = last3.length ? last3.reduce((s, x) => s + x.pay, 0) / last3.length : 0;
+    const tax = years ? retirementTax(severance, years) : retirementTax(0, 1);
+    const payDate = parse(input.payDate) != null ? input.payDate : (last != null ? addDays(input.lastWorkDate, 14) : '');
+    return {
+      months, included, excluded, missing, warnings, minHours, rate, severance, serviceDays, years,
+      serviceText: serviceText(input.hireDate, input.lastWorkDate), payDate, tax, netPay: Math.max(0, severance - tax.total),
+      includedPay: included.reduce((s, x) => s + x.pay, 0),
+      reference: serviceDays != null ? Math.floor(avg3 * serviceDays / 365) : 0
+    };
+  }
+  // 임금대장 시트(2차원 배열): '년월' 머리행 아래 행에서 '총근로'와 첫 번째 '계'(임금 합계) 열을 읽습니다.
+  function parsePayrollSheet(aoa) {
+    const clean = c => String(c ?? '').replace(/\s/g, '');
+    let hr = -1;
+    for (let i = 0; i < Math.min(aoa.length, 15); i++) if ((aoa[i] || []).some(c => ['년월', '귀속월'].includes(clean(c)))) { hr = i; break; }
+    if (hr < 0) return null;
+    const top = aoa[hr].map(clean), sub = (aoa[hr + 1] || []).map(clean);
+    const pick = (...names) => { for (const arr of [sub, top]) for (const n of names) { const i = arr.indexOf(n); if (i >= 0) return i; } return -1; };
+    const mi = Math.max(top.indexOf('년월'), top.indexOf('귀속월'));
+    const hi = pick('총근로', '총근로시간', '근로시간'), di = pick('근로일수');
+    let pi = sub.indexOf('계'); if (pi < 0) pi = pick('지급총액', '세전급여', '총지급액', '과세계');
+    if (hi < 0 || pi < 0) return null;
+    const out = [];
+    for (let r = hr + 1; r < aoa.length; r++) {
+      const row = aoa[r] || [], month = normMonth(row[mi]);
+      if (month) out.push({ month, days: di >= 0 ? toNum(row[di]) : 0, hours: toNum(row[hi]), pay: toNum(row[pi]) });
+    }
+    return out;
+  }
+  function maskRrn(v) { const d = String(v || '').replace(/\D/g, ''); return d.length >= 7 ? d.slice(0, 6) + '-' + d[6] + '******' : d; }
+  function birthFromRrn(v) {
+    const d = String(v || '').replace(/\D/g, ''); if (d.length < 7) return '';
+    const c = { 1: '19', 2: '19', 5: '19', 6: '19', 3: '20', 4: '20', 7: '20', 8: '20', 9: '18', 0: '18' }[d[6]];
+    const b = c + d.slice(0, 2) + '-' + d.slice(2, 4) + '-' + d.slice(4, 6);
+    return parse(b) != null ? b : '';
+  }
+
+  root.DHSeverance = { calculate, wagePeriods, serviceYears, retirementTax, addDays, accrual, mergeMonths, parsePayrollSheet, serviceText, maskRrn, birthFromRrn, normMonth };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
