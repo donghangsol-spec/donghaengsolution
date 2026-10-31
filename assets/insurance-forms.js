@@ -141,8 +141,26 @@
   let state = null;
   function open(reqId) {
     const req = (typeof insuranceRequests !== 'undefined' ? insuranceRequests : []).find(r => r.id === reqId); if (!req) return;
-    const emp = (typeof employees !== 'undefined' ? employees : []).find(e => e.id === req.employee_id) || { name: '' };
     const details = (typeof insuranceDetails !== 'undefined' ? insuranceDetails : []).filter(d => d.insurance_request_id === reqId);
+    openWith(req, details, '');
+  }
+  const addDay = d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + 1); return t.toISOString().slice(0, 10); };
+  // 직원 목록에서 바로: 진행 중인 신고 요청이 있으면 그것을, 없으면 직원 정보로 새로 채웁니다.
+  function openForEmployee(empId) {
+    const emp = (typeof employees !== 'undefined' ? employees : []).find(e => e.id === empId); if (!emp) return;
+    const type = emp.termination_date ? '상실' : '취득';
+    const reqs = (typeof insuranceRequests !== 'undefined' ? insuranceRequests : []).filter(r => r.employee_id === empId && r.request_type === type && !['반려', '취소'].includes(r.status));
+    const dets = typeof insuranceDetails !== 'undefined' ? insuranceDetails : [];
+    const withDetails = reqs.find(r => dets.some(d => d.insurance_request_id === r.id));
+    if (withDetails) return openWith(withDetails, dets.filter(d => d.insurance_request_id === withDetails.id), '이 직원의 신고 요청 내용으로 채웠습니다.');
+    if (type === '취득' && !emp.hire_date) return alert('직원 정보에 입사일을 먼저 입력해 주세요(직원 목록 → 수정).');
+    const date = type === '취득' ? emp.hire_date : addDay(emp.termination_date);
+    const req = { id: 'emp-' + emp.id, employee_id: emp.id, request_type: type, national_pension: true, health_insurance: true, employment_insurance: true, industrial_accident: true, loss_reason: '' };
+    const details = ORDER.map(t => ({ insurance_type: t, effective_date: date, remuneration_amount: emp.monthly_remuneration ?? '', weekly_hours: emp.weekly_hours ?? '', contract_end_date: null, occupation_code: '' }));
+    openWith(req, details, (type === '상실' ? '퇴사일(' + emp.termination_date + ') 다음 날을 상실일로 적었습니다. ' : '') + '신고 요청 없이 직원 정보로 채웠습니다. 가입하지 않은 보험은 아래에서 체크를 빼 주세요.', true);
+  }
+  function openWith(req, details, note, editable) {
+    const emp = (typeof employees !== 'undefined' ? employees : []).find(e => e.id === req.employee_id) || { name: '' };
     if (!details.length) return alert('보험별 상세 내용이 없습니다. 먼저 [검증]을 눌러 주세요.');
     const kind = req.request_type === '취득' ? 'acq' : req.request_type === '상실' ? 'loss' : null;
     if (!kind) return alert('신고서 출력은 취득·상실 신고만 지원합니다.');
@@ -150,14 +168,25 @@
     const companyId = (typeof cloudCompanyId !== 'undefined' && cloudCompanyId) || 'default', companyName = (co && co.name && !String(co.name).startsWith('미지정')) ? co.name : '';
     const biz = loadBiz(companyId, companyName);
     const groups = lineGroups(details), d0 = groups[0].get('건강보험') || groups[0].rows[0];
-    state = { req, emp, groups, kind, companyId };
+    state = { req: { ...req }, emp, groups, kind, companyId, editable: !!editable, allDetails: details };
     const card = document.getElementById('insFormCard');
     document.getElementById('insFormTitle').textContent = '공단 신고서 출력 · ' + (emp.name || '-') + ' · 자격' + req.request_type;
-    document.getElementById('insFormPanel').innerHTML = panelHtml(kind, biz, emp, req, groups, d0);
-    document.getElementById('insFormMsg').textContent = groups.length > 1 ? '보험별 날짜가 달라 서식 안내대로 ' + groups.length + '줄로 나눠 적습니다.' : '';
+    document.getElementById('insFormPanel').innerHTML = (editable ? '<h4>신고할 보험과 날짜</h4><div class="formgrid"><label>' + (kind === 'acq' ? '자격취득일' : '자격상실일(퇴사 다음 날)') + '<input id="ie_date" type="date" value="' + esc(groups[0].date) + '"></label>' + ORDER.map(t => '<label class="if-chk"><input type="checkbox" class="ie-ins" value="' + t + '" checked> ' + t + '</label>').join('') + (kind === 'loss' ? '<label>상실사유<input id="ie_reason" list="lossReasonList" placeholder="목록에서 고르거나 직접 입력"></label>' : '') + '</div>' : '') + panelHtml(kind, biz, emp, req, groups, d0);
+    state.note = [note, groups.length > 1 ? '보험별 날짜가 달라 서식 안내대로 ' + groups.length + '줄로 나눠 적습니다.' : ''].filter(Boolean).join(' ');
+    document.getElementById('insFormMsg').textContent = state.note;
     card.hidden = false; preview(); card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  function syncEditable() {
+    if (!state || !state.editable) return;
+    const date = document.getElementById('ie_date')?.value || state.groups[0].date;
+    const on = new Set([...document.querySelectorAll('.ie-ins:checked')].map(x => x.value));
+    const base = state.allDetails[0];
+    state.groups = on.size ? lineGroups([...on].map(t => ({ ...base, insurance_type: t, effective_date: date }))) : [];
+    state.req.health_insurance = on.has('건강보험'); state.req.national_pension = on.has('국민연금'); state.req.employment_insurance = on.has('고용보험'); state.req.industrial_accident = on.has('산재보험');
+    const r = document.getElementById('ie_reason'); if (r) { const changed = state.req.loss_reason !== r.value.trim(); state.req.loss_reason = r.value.trim(); const rt = document.getElementById('if_reasonText'), ec = document.getElementById('if_eiCode'); if (changed && rt) rt.value = state.req.loss_reason; if (changed && ec && !ec.dataset.touched) ec.value = eiCodeFromReason(state.req.loss_reason); }
+  }
   function ctx() {
+    syncEditable();
     const f = readForm(); const biz = { name: f.name, mgmtNo: f.mgmtNo, addr: f.addr, zip: f.zip, tel: f.tel, fax: f.fax, agentNo: f.agentNo, agentName: f.agentName, signer: f.signer };
     saveBiz(state.companyId, biz);
     return { biz, emp: state.emp, req: state.req, groups: state.groups, f };
@@ -165,6 +194,7 @@
   function preview() { if (!state) return; const c = ctx(); document.getElementById('insFormPreview').innerHTML = state.kind === 'acq' ? acqHtml(c) : lossHtml(c); }
   function print() {
     if (!state) return; const c = ctx(), miss = [];
+    if (!state.groups.length) miss.push('신고할 보험(하나 이상)');
     if (!c.biz.mgmtNo) miss.push('사업장관리번호'); if (!c.f.rrn || c.f.rrn.replace(/\D/g, '').length !== 13) miss.push('주민등록번호 13자리');
     if (state.kind === 'loss' && (state.req.employment_insurance || state.req.industrial_accident) && !c.f.eiCode) miss.push('고용보험 상실사유 구분코드');
     if (miss.length) { document.getElementById('insFormMsg').textContent = '인쇄 전에 입력해 주세요: ' + miss.join(', '); return; }
@@ -175,7 +205,7 @@
   function close() { state = null; document.getElementById('insFormCard').hidden = true; document.getElementById('insFormPreview').innerHTML = ''; const b = document.getElementById('insPrint'); if (b) b.innerHTML = ''; }
   root.addEventListener('afterprint', () => { document.body.classList.remove('ins-printing'); const b = document.getElementById('insPrint'); if (b) b.innerHTML = ''; });
   document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#insFormPanel')) { if (e.target.id === 'if_rrn') e.target.value = rrnFmt(e.target.value); preview(); } });
-  document.addEventListener('change', e => { if (e.target.closest && e.target.closest('#insFormPanel')) preview(); });
+  document.addEventListener('change', e => { if (e.target.closest && e.target.closest('#insFormPanel')) { if (e.target.id === 'if_eiCode') e.target.dataset.touched = '1'; preview(); } });
 
-  root.DHInsuranceForms = { open, print, close, lineGroups, eiCodeFromReason, CODES, acqHtml, lossHtml };
+  root.DHInsuranceForms = { open, openForEmployee, print, close, lineGroups, eiCodeFromReason, CODES, acqHtml, lossHtml };
 })(typeof window !== 'undefined' ? window : globalThis);
