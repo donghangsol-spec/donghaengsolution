@@ -15,7 +15,6 @@
   const won = n => (n === '' || n == null || isNaN(Number(n))) ? '' : Number(n).toLocaleString('ko-KR');
   const dot = d => d ? String(d).replace(/-/g, '.') : '';
   const opts = (list, val) => '<option value="">선택</option>' + list.map(([c, t]) => '<option value="' + c + '"' + (c === val ? ' selected' : '') + '>' + c + ' ' + esc(t) + '</option>').join('');
-  const label = (list, c) => { const f = list.find(x => x[0] === c); return f ? f[0] : ''; };
 
   // 상실사유 문구 → 고용보험 구분코드(확실한 것만)
   function eiCodeFromReason(text) {
@@ -27,7 +26,7 @@
     if (/폐업|도산/.test(t)) return '22';
     return '';
   }
-  // 같은 사람이라도 보험마다 날짜가 다르면 줄을 나눕니다(서식 유의사항).
+  // 같은 날짜끼리 묶습니다. 취득: 날짜가 다르면 줄을 나눔(제1쪽 안내). 상실: 한 줄, 상실연월일 칸 안에서 구분(뒤쪽 유의사항).
   function lineGroups(details) {
     const map = new Map();
     for (const d of [...details].sort((a, b) => ORDER.indexOf(a.insurance_type) - ORDER.indexOf(b.insurance_type))) {
@@ -42,67 +41,77 @@
   function saveBiz(id, v) { try { localStorage.setItem(storeKey(id), JSON.stringify(v)); } catch (_) {} }
   function rrnFmt(v) { const d = String(v || '').replace(/\D/g, '').slice(0, 13); return d.length > 6 ? d.slice(0, 6) + '-' + d.slice(6) : d; }
 
-  // ── 신고서 HTML (인쇄용) ──
-  function bizBlock(b, kind) {
-    const agent = '<table class="f-biz" style="border-top:0"><tr><th class="f-side">보험사무<br>대행기관</th><th>번호</th><td>' + esc(b.agentNo) + '</td><th>명칭</th><td>' + esc(b.agentName) + '</td><th>하수인 관리번호</th><td></td></tr></table>';
-    if (kind === 'loss') {
-      return '<table class="f-biz"><tr><th rowspan="2" class="f-side">사업장</th><th>사업장관리번호</th><td>' + esc(b.mgmtNo) + '</td><th>명칭</th><td>' + esc(b.name) + '</td><th>전화번호</th><td>' + esc(b.tel) + '</td><th>FAX번호</th><td>' + esc(b.fax) + '</td></tr>' +
-        '<tr><th>소재지</th><td colspan="5">' + esc(b.addr) + '</td><th>우편번호</th><td>' + esc(b.zip) + '</td></tr></table>' + agent;
-    }
-    return '<table class="f-biz"><tr><th rowspan="3" class="f-side">사업장</th><th>사업장관리번호</th><td>' + esc(b.mgmtNo) + '</td><th>명칭</th><td colspan="3">' + esc(b.name) + '</td></tr>' +
-      '<tr><th>소재지</th><td colspan="3">' + esc(b.addr) + '</td><th>우편번호</th><td>' + esc(b.zip) + '</td></tr>' +
-      '<tr><th>전화번호</th><td colspan="3">' + esc(b.tel) + '</td><th>FAX번호</th><td>' + esc(b.fax) + '</td></tr></table>' + agent;
+  // ── 신고서 (원본 서식 그림 위에 칸 좌표대로 글자를 찍습니다) ──
+  // 좌표 단위: pt. 원본 PDF 한 쪽 = 841.89 × 595.28pt (A4 가로). 좌표는 원본 PDF에서 칸 선을 읽어 정했습니다.
+  const PAGE_W = 841.89, PAGE_H = 595.28;
+  const FORM_PAGES = { acq: ['/assets/forms/acq-1.png', '/assets/forms/acq-2.png', '/assets/forms/acq-3.png'], loss: ['/assets/forms/loss-1.png', '/assets/forms/loss-2.png'] };
+  // (x0,y0)-(x1,y1) 칸 안에 글자. align: c(가운데) l(왼쪽) r(오른쪽)
+  function put(x0, y0, x1, y1, text, align, size) {
+    if (text === '' || text == null) return '';
+    const j = align === 'l' ? 'flex-start' : align === 'r' ? 'flex-end' : 'center';
+    return '<span class="fo" style="left:' + x0 + 'pt;top:' + y0 + 'pt;width:' + (x1 - x0) + 'pt;height:' + (y1 - y0) + 'pt;justify-content:' + j + ';font-size:' + (size || 8) + 'pt">' + text + '</span>';
   }
-  const ck = on => on ? '[√]' : '[ ]';
-  function acqHtml(ctx) {
+  const tick = (cx, cy, on) => on ? '<span class="fo fo-tick" style="left:' + (cx - 4) + 'pt;top:' + (cy - 5) + 'pt">√</span>' : '';
+  function sheet(src, overlay) { return '<div class="f-sheet"><img src="' + src + '" alt="" draggable="false">' + (overlay || '') + '</div>'; }
+  const ymd = d => { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? { y: m[1], m: String(+m[2]), d: String(+m[3]) } : null; };
+  function signDateParts(f) { return ymd(f.signDate) || { y: '', m: '', d: '' }; }
+  const SHORT = { '건강보험': '건강', '국민연금': '연금', '고용보험': '고용', '산재보험': '산재' };
+
+  function acqHtml(ctx, withBack) {
     const { biz, emp, req, groups, f } = ctx;
-    const lines = groups.map((g, i) => {
+    let o = tick(155.6, 81.3, req.national_pension) + tick(499.9, 81.3, req.health_insurance) + tick(155.6, 101.5, req.employment_insurance) + tick(499.9, 101.5, req.industrial_accident);
+    o += put(172, 156.4, 288, 169.7, esc(biz.mgmtNo), 'l', 8.5) + put(312, 156.4, 440, 169.7, esc(biz.name), 'l', 8.5);
+    o += put(138, 170.5, 640, 181.5, esc(biz.addr), 'l', 8.5) + put(684, 181, 769, 191, esc(biz.zip), 'c', 8.5);
+    o += put(146, 192, 440, 205, esc(biz.tel), 'l', 8.5) + put(483, 192, 775, 205, esc(biz.fax), 'l', 8.5);
+    o += put(128, 206.5, 288, 226.5, esc(biz.agentNo), 'l', 8.5) + put(312, 206.5, 440, 226.5, esc(biz.agentName), 'l', 8.5);
+    groups.slice(0, 4).forEach((g, i) => {
+      const dy = 41.5 * i, Y = v => v + dy;
       const hi = g.get('건강보험'), np = g.get('국민연금'), ei = g.get('고용보험'), ia = g.get('산재보험'), any = hi || np || ei || ia;
-      const pay = (hi || np || ei || ia)?.remuneration_amount;
-      return '<tr><td rowspan="2" class="c">' + (i + 1) + '</td><td>' + esc(emp.name) + '</td><td class="c">' + esc(f.nationality) + '</td><td rowspan="2" class="c">' + (f.isRep ? '[√]예<br>[ ]아니오' : '[ ]예<br>[√]아니오') + '</td>' +
-        '<td rowspan="2" class="r">' + won(f.pay || pay) + '</td><td rowspan="2" class="c">' + dot(g.date) + '</td>' +
-        '<td class="c" colspan="3">' + ck(np) + '국민연금<br>(' + ck(np && f.npPayFirst) + '취득 월 납부 희망)</td>' +
-        '<td class="c">' + ck(hi) + '건강보험</td><td class="c" colspan="3">(' + ck(hi && f.dependent) + '피부양자 신청)</td>' +
-        '<td class="c" colspan="5">' + ck(ei) + '고용보험 (계약직 여부: ' + (f.contract ? '[√]예 [ ]아니오' : '[ ]예 [√]아니오') + ')<br>' + ck(ia) + '산재보험</td></tr>' +
-        '<tr><td class="c">' + esc(f.rrn) + '</td><td class="c">' + esc(f.visa) + '</td>' +
-        '<td class="c">' + (np ? esc(f.npCode) : '') + '</td><td class="c">' + (np ? esc(f.npSpecial) : '') + '</td><td class="c">' + (np ? esc(f.npOccup) : '') + '</td>' +
-        '<td class="c">' + (hi ? esc(f.hiCode) : '') + '</td><td class="c">' + (hi ? esc(f.hiReduce) : '') + '</td><td class="c"></td><td class="c"></td>' +
-        '<td class="c">' + (ei || ia ? esc(f.jobCode || (ei || ia)?.occupation_code || '') : '') + '</td><td class="c">' + (ei || ia ? esc(f.weeklyHours) : '') + '</td><td class="c">' + (ei && f.contract ? esc(f.contractEnd) : '') + '</td>' +
-        '<td class="c">' + (ei || ia ? esc(f.chargeCode) : '') + '</td><td class="c">' + (ei || ia ? esc(f.chargeReason) : '') + '</td></tr>';
-    }).join('');
-    return '<div class="f-doc"><div class="f-law">■ 국민연금법 시행규칙 [별지 제6호서식] · 국민건강보험법 시행규칙 · 고용보험법 시행규칙 · 산재보험 공통</div>' +
-      '<h1>[' + (req.national_pension ? '√' : ' ') + ']국민연금 [' + (req.health_insurance ? '√' : ' ') + ']건강보험 [' + (req.employment_insurance ? '√' : ' ') + ']고용보험 [' + (req.industrial_accident ? '√' : ' ') + ']산재보험<br>사업장가입자 자격취득 신고서</h1>' +
-      '<p class="f-note">※ 같은 사람의 4대 사회보험의 자격취득일 또는 월 소득액이 서로 다른 경우 줄을 달리하여 적습니다.</p>' +
-      '<table class="f-biz"><tr><th>접수번호</th><td></td><th>접수일시</th><td></td><th>처리기간</th><td>3일(고용·산재보험은 5일)</td></tr></table>' + bizBlock(biz, 'acq') +
-      '<table class="f-main"><thead><tr><th rowspan="3">구분</th><th>성명</th><th>국적</th><th rowspan="3">대표자<br>여부</th><th rowspan="3">월 소득액<br>(소득월액·보수월액·<br>월평균보수)(원)</th><th rowspan="3">자격<br>취득일<br>(YYYY.MM.DD)</th><th colspan="3">국민연금</th><th colspan="4">건강보험</th><th colspan="5">고용보험·산재보험</th></tr>' +
-      '<tr><th rowspan="2">주민등록번호<br>(외국인등록번호)</th><th rowspan="2">체류<br>자격</th><th rowspan="2">자격취득<br>부호</th><th rowspan="2">특수직종<br>부호</th><th rowspan="2">직역연금<br>부호</th><th rowspan="2">자격취득<br>부호</th><th>보험료</th><th colspan="2">공무원·교직원</th><th rowspan="2">직종<br>부호</th><th rowspan="2">1주<br>소정근로<br>시간</th><th rowspan="2">계약종료<br>연월</th><th colspan="2">보험료부과구분</th></tr>' +
-      '<tr><th>감면부호</th><th>회계명/부호</th><th>직종명/부호</th><th>부호</th><th>사유</th></tr></thead><tbody>' + lines + '</tbody></table>' +
-      '<p class="f-sign-text">위와 같이 자격취득을 신고합니다.</p><p class="f-date">' + esc(f.signDate) + '</p>' +
-      '<p class="f-sign">신고인(사용자·대표자) <span class="f-line">' + esc(f.signer) + '</span> (서명 또는 인) &nbsp; / [ ]보험사무대행기관 <span class="f-line"></span> (서명 또는 인)</p>' +
-      '<p class="f-to">국민연금공단 이사장 / 국민건강보험공단 이사장 / 근로복지공단 ○○지역본부(지사)장 귀하</p></div>';
+      o += put(57.5, Y(286.6), 139.9, Y(307.8), esc(emp.name), 'c', 8.5) + put(57.5, Y(307.8), 139.9, Y(328.1), esc(f.rrn), 'c', 8);
+      o += put(139.9, Y(286.6), 167.3, Y(307.8), esc(f.nationality), 'c', 7) + put(139.9, Y(307.8), 167.3, Y(328.1), esc(f.visa), 'c', 7);
+      o += tick(177.7, Y(298), !!f.isRep) + tick(177.7, Y(316.5), !f.isRep);
+      o += put(213, Y(286.6), 286, Y(328.1), won(f.pay || any?.remuneration_amount), 'r', 8.5);
+      o += put(287.9, Y(286.6), 328.9, Y(328.1), dot(g.date), 'c', 7.5);
+      o += tick(353.7, Y(296.6), !!np) + tick(339.6, Y(306.8), !!(np && f.npPayFirst));
+      if (np) o += put(328.9, Y(316.3), 357.4, Y(328.1), esc(f.npCode), 'c', 8) + put(357.4, Y(316.3), 387.1, Y(328.1), esc(f.npSpecial), 'c', 8) + put(387.1, Y(316.3), 414.6, Y(328.1), esc(f.npOccup), 'c', 8);
+      o += tick(422.4, Y(297), !!hi) + tick(475.4, Y(301.4), !!(hi && f.dependent));
+      if (hi) o += put(414.6, Y(316.3), 465.5, Y(328.1), esc(f.hiCode), 'c', 8) + put(465.5, Y(316.3), 497.3, Y(328.1), esc(f.hiReduce), 'c', 8);
+      o += tick(578.2, Y(296), !!ei) + tick(578.2, Y(306.8), !!ia);
+      if (ei) o += tick(666.2, Y(296.3), !!f.contract) + tick(691.9, Y(296.3), !f.contract);
+      if (ei || ia) o += put(568.1, Y(316.3), 593.2, Y(328.1), esc(f.jobCode || any?.occupation_code || ''), 'c', 7.5) + put(593.2, Y(316.3), 622.8, Y(328.1), esc(f.weeklyHours), 'c', 8) + put(622.8, Y(316.3), 658.7, Y(328.1), esc(ei && f.contract ? f.contractEnd : ''), 'c', 7) + put(658.7, Y(316.3), 691, Y(328.1), esc(f.chargeCode), 'c', 8) + put(691, Y(316.3), 723.3, Y(328.1), esc(f.chargeReason), 'c', 8);
+    });
+    const sd = signDateParts(f);
+    o += put(640, 476, 683, 486, sd.y, 'r', 9) + put(694, 476, 723, 486, sd.m, 'r', 9) + put(734, 476, 763, 486, sd.d, 'r', 9);
+    o += put(296, 492, 412, 503, esc(f.signer), 'c', 9.5);
+    const pages = [sheet(FORM_PAGES.acq[0], o)];
+    if (withBack) FORM_PAGES.acq.slice(1).forEach(src => pages.push(sheet(src)));
+    return pages.join('');
   }
-  function lossHtml(ctx) {
+  function lossHtml(ctx, withBack) {
     const { biz, emp, req, groups, f } = ctx;
-    const lines = groups.map((g, i) => {
-      const hi = g.get('건강보험'), np = g.get('국민연금'), ei = g.get('고용보험'), ia = g.get('산재보험');
-      return '<tr><td rowspan="2" class="c">' + (i + 1) + '</td><td rowspan="2" class="c">' + esc(emp.name) + '</td><td rowspan="2" class="c">' + esc(f.rrn) + '</td><td rowspan="2" class="c">' + esc(f.phone) + '</td><td rowspan="2" class="c">' + dot(g.date) + '</td>' +
-        '<td rowspan="2" class="c">' + (np ? esc(f.npCode) : '') + '</td><td rowspan="2" class="c">' + (np ? ck(f.npPayFirst) + ' 희망' : '') + '</td>' +
-        '<td rowspan="2" class="c">' + (hi ? esc(f.hiCode) : '') + '</td><td rowspan="2" class="r">' + (hi ? won(f.hiTotalThis) : '') + '</td><td rowspan="2" class="c">' + (hi ? esc(f.hiMonthsThis) : '') + '</td><td rowspan="2" class="r">' + (hi ? won(f.hiTotalPrev) : '') + '</td><td rowspan="2" class="c">' + (hi ? esc(f.hiMonthsPrev) : '') + '</td>' +
-        '<td rowspan="2" class="c">' + (ei || ia ? esc(f.reasonText) : '') + '</td><td rowspan="2" class="c">' + (ei || ia ? esc(f.eiCode) : '') + '</td>' +
-        '<td class="r">' + (ei ? won(f.eiTotalThis) : '') + '</td><td class="r">' + (ei ? won(f.eiTotalPrev) : '') + '</td></tr>' +
-        '<tr><td class="r">' + (ia ? won(f.iaTotalThis) : '') + '</td><td class="r">' + (ia ? won(f.iaTotalPrev) : '') + '</td></tr>';
-    }).join('');
-    return '<div class="f-doc"><div class="f-law">■ 국민건강보험법 시행규칙 [별지 제8호서식] · 국민연금법 · 고용보험법 시행규칙 공통</div>' +
-      '<h1>[' + (req.national_pension ? '√' : ' ') + ']국민연금 [' + (req.health_insurance ? '√' : ' ') + ']건강보험 [' + (req.employment_insurance ? '√' : ' ') + ']고용보험 [' + (req.industrial_accident ? '√' : ' ') + ']산재보험<br>사업장가입자 자격상실 신고서</h1>' +
-      '<p class="f-note">※ 같은 사람의 4대 사회보험의 상실일자가 다른 경우 줄을 달리하여 적습니다.</p>' +
-      '<table class="f-biz"><tr><th>접수번호</th><td></td><th>접수일자</th><td></td><th>처리기간</th><td>3일(고용·산재보험은 7일)</td></tr></table>' + bizBlock(biz, 'loss') +
-      '<table class="f-main"><thead><tr><th rowspan="4">일련<br>번호</th><th rowspan="4">성명</th><th rowspan="4">주민등록번호<br>(외국인등록번호·<br>국내거소신고번호)</th><th rowspan="4">전화번호<br>(휴대전화번호)</th><th rowspan="4">상실<br>연월일<br>(YYYY.MM.DD)</th><th colspan="2">국민연금</th><th colspan="5">건강보험</th><th colspan="4">' + ck(req.employment_insurance) + '고용보험 ' + ck(req.industrial_accident) + '산재보험</th></tr>' +
-      '<tr><th rowspan="3">상실<br>부호</th><th rowspan="3">초일취득·<br>당월상실자<br>납부여부</th><th rowspan="3">상실<br>부호</th><th colspan="4">연간 보수 총액</th><th colspan="2" rowspan="2">상실 사유</th><th>해당 연도<br>보수 총액</th><th>전년도<br>보수 총액</th></tr>' +
-      '<tr><th colspan="2">해당 연도</th><th colspan="2">전년도</th><th>고용보험</th><th>고용보험</th></tr>' +
-      '<tr><th>보수 총액</th><th>근무<br>개월수</th><th>보수 총액</th><th>근무<br>개월수</th><th>구체적<br>사유</th><th>구분<br>코드</th><th>산재보험</th><th>산재보험</th></tr></thead><tbody>' + lines + '</tbody></table>' +
-      '<p class="f-sign-text">위와 같이 자격상실(고용종료) 사항을 신고합니다.</p><p class="f-date">' + esc(f.signDate) + '</p>' +
-      '<p class="f-sign">신고인·확인인(사용자·대표자) <span class="f-line">' + esc(f.signer) + '</span> (서명 또는 인) &nbsp; / [ ]보험사무대행기관 <span class="f-line"></span> (서명 또는 인)</p>' +
-      '<p class="f-to">국민연금공단 이사장 / 국민건강보험공단 이사장 / 근로복지공단 지역본부(지사)장 귀하</p></div>';
+    let o = tick(179.9, 88, req.national_pension) + tick(179.6, 107.2, req.employment_insurance) + tick(523, 88, req.health_insurance) + tick(523, 107.2, req.industrial_accident);
+    o += tick(643, 260.6, req.employment_insurance) + tick(703, 260.6, req.industrial_accident);
+    o += put(142, 186.5, 300, 198, esc(biz.mgmtNo), 'l', 8.5) + put(303, 186.5, 461, 198, esc(biz.name), 'l', 8.5) + put(465, 186.5, 622, 198, esc(biz.tel), 'l', 8.5) + put(626, 186.5, 782, 198, esc(biz.fax), 'l', 8.5);
+    o += put(176, 200.5, 640, 211.5, esc(biz.addr), 'l', 8.5) + put(689, 206, 776, 216, esc(biz.zip), 'c', 8.5);
+    o += put(165, 237, 300, 250, esc(biz.agentName), 'l', 8.5) + put(326, 237, 461, 250, esc(biz.agentNo), 'l', 8.5);
+    // 같은 사람은 한 줄. 상실일이 다르면 상실연월일 칸 안에서 줄을 바꾸고 괄호로 보험을 적습니다(뒤쪽 유의사항).
+    const all = groups.flatMap(g => g.rows), has = t => all.some(r => r.insurance_type === t);
+    const hi = has('건강보험'), np = has('국민연금'), ei = has('고용보험'), ia = has('산재보험');
+    const dates = groups.length > 1 ? groups.map(g => dot(g.date) + '.<br>(' + g.rows.map(r => SHORT[r.insurance_type]).join('·') + ')').join('<br>') : dot(groups[0]?.date);
+    const Y0 = 330.5, Y1 = 365.3, Ym = 347.9;
+    o += put(58, Y0, 79.5, Y1, '1', 'c', 8.5) + put(79.5, Y0, 113.2, Y1, esc(emp.name), 'c', 8.5) + put(113.2, Y0, 203.8, Y1, esc(f.rrn), 'c', 8) + put(203.8, Y0, 268.5, Y1, esc(f.phone), 'c', 7.5);
+    o += put(268.5, Y0, 330, Y1, dates, 'c', groups.length > 2 ? 4.8 : groups.length > 1 ? 6 : 7.5);
+    if (np) o += put(330, Y0, 361.2, Y1, esc(f.npCode), 'c', 8.5) + tick(381.2, 355.3, !!f.npPayFirst);
+    if (hi) o += put(401, Y0, 432, Y1, esc(f.hiCode), 'c', 8.5) + put(432.5, Y0, 485.5, Y1, won(f.hiTotalThis), 'r', 7.5) + put(485.9, Y0, 516.9, Y1, esc(f.hiMonthsThis), 'c', 8) + put(517.3, Y0, 570, Y1, won(f.hiTotalPrev), 'r', 7.5) + put(570.5, Y0, 603.2, Y1, esc(f.hiMonthsPrev), 'c', 8);
+    if (ei || ia) o += put(603.6, Y0, 667.6, Y1, esc(f.reasonText), 'c', 6) + put(668, Y0, 694.9, Y1, esc(f.eiCode), 'c', 8.5);
+    if (ei) o += put(695.3, Y0, 738.6, Ym, won(f.eiTotalThis), 'r', 7) + put(739.4, Y0, 782.6, Ym, won(f.eiTotalPrev), 'r', 7);
+    if (ia) o += put(695.3, Ym, 738.6, Y1, won(f.iaTotalThis), 'r', 7) + put(739.4, Ym, 782.6, Y1, won(f.iaTotalPrev), 'r', 7);
+    const sd = signDateParts(f);
+    o += put(650, 495.5, 692, 505, sd.y, 'r', 9) + put(703, 495.5, 732, 505, sd.m, 'r', 9) + put(744, 495.5, 773, 505, sd.d, 'r', 9);
+    o += put(358, 513, 450, 524, esc(f.signer), 'c', 9.5);
+    const pages = [sheet(FORM_PAGES.loss[0], o)];
+    if (withBack) pages.push(sheet(FORM_PAGES.loss[1]));
+    return pages.join('');
   }
 
   // ── 입력 패널 ──
@@ -111,13 +120,13 @@
     const sel = (id, lbl, list, val) => '<label>' + lbl + '<select id="if_' + id + '">' + opts(list, val) + '</select></label>';
     const chk = (id, lbl, on) => '<label class="if-chk"><input type="checkbox" id="if_' + id + '"' + (on ? ' checked' : '') + '> ' + lbl + '</label>';
     const has = t => groups.some(g => g.has(t));
-    const today = new Date(); const td = today.getFullYear() + '년 ' + (today.getMonth() + 1) + '월 ' + today.getDate() + '일';
+    const today = new Date(); const td = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     let h = '<div class="if-grid"><div><h4>사업장 <span class="muted">(이 브라우저에 기억)</span></h4><div class="formgrid">' +
       fld('mgmtNo', '사업장관리번호', biz.mgmtNo) + fld('name', '명칭', biz.name) + fld('addr', '소재지', biz.addr) + fld('zip', '우편번호', biz.zip) + fld('tel', '전화번호', biz.tel) + fld('fax', 'FAX번호', biz.fax) + fld('agentNo', '보험사무대행기관 번호', biz.agentNo) + fld('agentName', '보험사무대행기관 명칭', biz.agentName) + '</div></div>' +
       '<div><h4>근로자</h4><div class="formgrid"><label>성명<input value="' + esc(emp.name) + '" disabled></label>' +
       '<label>주민등록번호 <span class="muted">(저장 안 함)</span><input id="if_rrn" inputmode="numeric" autocomplete="off" placeholder="000000-0000000"></label>' +
       (kind === 'loss' ? fld('phone', '전화번호(휴대전화)', '') : fld('nationality', '국적(외국인만)', '') + fld('visa', '체류자격(외국인만)', '')) +
-      fld('signer', '신고인(대표자) 성명', biz.signer) + fld('signDate', '신고일', td) + '</div></div></div>';
+      fld('signer', '신고인(대표자) 성명', biz.signer) + fld('signDate', '신고일', td, 'date') + '<label class="if-chk"><input type="checkbox" id="if_withBack" checked> 작성방법 쪽(' + (kind === 'acq' ? '제2·3쪽' : '뒤쪽') + ') 함께 인쇄</label>' + '</div></div></div>';
     h += '<h4>보험별 항목 <span class="muted">— 날짜: ' + groups.map(g => esc(g.date) + '(' + g.rows.map(r => r.insurance_type.replace('보험', '').replace('국민', '')).join('·') + ')').join(', ') + '</span></h4><div class="formgrid">';
     if (kind === 'acq') {
       h += fld('pay', '월 소득액(원)', d0?.remuneration_amount ?? '', 'number') + chk('isRep', '대표자', false);
@@ -172,7 +181,7 @@
     const card = document.getElementById('insFormCard');
     document.getElementById('insFormTitle').textContent = '공단 신고서 출력 · ' + (emp.name || '-') + ' · 자격' + req.request_type;
     document.getElementById('insFormPanel').innerHTML = (editable ? '<h4>신고할 보험과 날짜</h4><div class="formgrid"><label>' + (kind === 'acq' ? '자격취득일' : '자격상실일(퇴사 다음 날)') + '<input id="ie_date" type="date" value="' + esc(groups[0].date) + '"></label>' + ORDER.map(t => '<label class="if-chk"><input type="checkbox" class="ie-ins" value="' + t + '" checked> ' + t + '</label>').join('') + (kind === 'loss' ? '<label>상실사유<input id="ie_reason" list="lossReasonList" placeholder="목록에서 고르거나 직접 입력"></label>' : '') + '</div>' : '') + panelHtml(kind, biz, emp, req, groups, d0);
-    state.note = [note, groups.length > 1 ? '보험별 날짜가 달라 서식 안내대로 ' + groups.length + '줄로 나눠 적습니다.' : ''].filter(Boolean).join(' ');
+    state.note = [note, groups.length > 1 ? (kind === 'loss' ? '보험별 상실일이 달라 서식 뒤쪽 안내대로 상실연월일 칸 안에 줄을 바꿔 괄호로 적습니다.' : '보험별 취득일이 달라 서식 안내대로 ' + groups.length + '줄로 나눠 적습니다.') : '', kind === 'acq' && groups.length > 4 ? '한 장에 4줄까지 들어갑니다.' : ''].filter(Boolean).join(' ');
     document.getElementById('insFormMsg').textContent = state.note;
     card.hidden = false; preview(); card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -191,7 +200,7 @@
     saveBiz(state.companyId, biz);
     return { biz, emp: state.emp, req: state.req, groups: state.groups, f };
   }
-  function preview() { if (!state) return; const c = ctx(); document.getElementById('insFormPreview').innerHTML = state.kind === 'acq' ? acqHtml(c) : lossHtml(c); }
+  function preview() { if (!state) return; const c = ctx(); document.getElementById('insFormPreview').innerHTML = state.kind === 'acq' ? acqHtml(c, false) : lossHtml(c, false); }
   function print() {
     if (!state) return; const c = ctx(), miss = [];
     if (!state.groups.length) miss.push('신고할 보험(하나 이상)');
@@ -199,8 +208,10 @@
     if (state.kind === 'loss' && (state.req.employment_insurance || state.req.industrial_accident) && !c.f.eiCode) miss.push('고용보험 상실사유 구분코드');
     if (miss.length) { document.getElementById('insFormMsg').textContent = '인쇄 전에 입력해 주세요: ' + miss.join(', '); return; }
     let box = document.getElementById('insPrint'); if (!box) { box = document.createElement('div'); box.id = 'insPrint'; document.body.appendChild(box); }
-    box.innerHTML = state.kind === 'acq' ? acqHtml(c) : lossHtml(c);
-    document.body.classList.add('ins-printing'); root.print();
+    box.innerHTML = state.kind === 'acq' ? acqHtml(c, c.f.withBack) : lossHtml(c, c.f.withBack);
+    document.body.classList.add('ins-printing');
+    const imgs = [...box.querySelectorAll('img')];
+    Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))).then(() => root.print());
   }
   function close() { state = null; document.getElementById('insFormCard').hidden = true; document.getElementById('insFormPreview').innerHTML = ''; const b = document.getElementById('insPrint'); if (b) b.innerHTML = ''; }
   root.addEventListener('afterprint', () => { document.body.classList.remove('ins-printing'); const b = document.getElementById('insPrint'); if (b) b.innerHTML = ''; });
